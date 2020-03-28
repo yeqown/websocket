@@ -1,6 +1,6 @@
 ## WebSockt (Beta)
 
-TODO: ADD more Badges
+[![Go Report Card](https://goreportcard.com/badge/github.com/yeqown/websocket)](https://goreportcard.com/report/github.com/yeqown/websocket) [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/yeqown/websocket)
 
 this is an Go implementation of WebSocket protocol. just for study, **DO NOT USING IN PRODUCTION !!!**, so it will be easy to read and **SIMPLE**.
 
