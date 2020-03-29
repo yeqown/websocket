@@ -8,7 +8,8 @@ import (
 
 var (
 	debugMode = true
-	logger    = log.NewLogger()
+	// debugMode = false
+	logger = log.NewLogger()
 )
 
 func init() {

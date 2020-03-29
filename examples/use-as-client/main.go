@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/yeqown/websocket"
@@ -33,10 +31,12 @@ func main() {
 	for {
 		mt, msg, err := conn.ReadMessage()
 		if err != nil {
-			if errors.Is(err, io.ErrUnexpectedEOF) {
+			if ce, ok := err.(*websocket.CloseError); ok {
+				fmt.Printf("close err=%d, %s", ce.Code, ce.Text)
 				break
 			}
 			fmt.Printf("recv failed, err=%v\n", err)
+			time.Sleep(1 * time.Second)
 		}
 		fmt.Printf("messageType=%d, msg=%s\n", mt, msg)
 	}

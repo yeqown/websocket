@@ -159,7 +159,7 @@ func Test_FrameMaskAndUnmask(t *testing.T) {
 	t.Logf("before %+v", frm)
 	frm.maskPayload()
 	t.Logf("masked %+v", frm)
-	frm.unmaskPayload()
+	frm.maskPayload()
 	t.Logf("unmasked %+v", frm)
 	got := frm.Payload
 

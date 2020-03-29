@@ -18,12 +18,24 @@ import (
 	"errors"
 	"io"
 	"math/rand"
+	"strconv"
 )
 
 const (
-	// CloseAbnormalClosure .
-	CloseAbnormalClosure = 1006
-	// TODO more close code
+	CloseNormalClosure           = 1000
+	CloseGoingAway               = 1001
+	CloseProtocolError           = 1002
+	CloseUnsupportedData         = 1003
+	CloseNoStatusReceived        = 1005
+	CloseAbnormalClosure         = 1006
+	CloseInvalidFramePayloadData = 1007
+	ClosePolicyViolation         = 1008
+	CloseMessageTooBig           = 1009
+	CloseMandatoryExtension      = 1010
+	CloseInternalServerErr       = 1011
+	CloseServiceRestart          = 1012
+	CloseTryAgainLater           = 1013
+	CloseTLSHandshake            = 1015
 )
 
 // CloseError .
@@ -32,12 +44,45 @@ type CloseError struct {
 	Text string
 }
 
-func (ce CloseError) Error() string {
-	return ce.Text
+func (e *CloseError) Error() string {
+	s := []byte("websocket: close ")
+	s = strconv.AppendInt(s, int64(e.Code), 10)
+	switch e.Code {
+	case CloseNormalClosure:
+		s = append(s, " (normal)"...)
+	case CloseGoingAway:
+		s = append(s, " (going away)"...)
+	case CloseProtocolError:
+		s = append(s, " (protocol error)"...)
+	case CloseUnsupportedData:
+		s = append(s, " (unsupported data)"...)
+	case CloseNoStatusReceived:
+		s = append(s, " (no status)"...)
+	case CloseAbnormalClosure:
+		s = append(s, " (abnormal closure)"...)
+	case CloseInvalidFramePayloadData:
+		s = append(s, " (invalid payload data)"...)
+	case ClosePolicyViolation:
+		s = append(s, " (policy violation)"...)
+	case CloseMessageTooBig:
+		s = append(s, " (message too big)"...)
+	case CloseMandatoryExtension:
+		s = append(s, " (mandatory extension missing)"...)
+	case CloseInternalServerErr:
+		s = append(s, " (internal server error)"...)
+	case CloseTLSHandshake:
+		s = append(s, " (TLS handshake error)"...)
+	}
+	if e.Text != "" {
+		s = append(s, ": "...)
+		s = append(s, e.Text...)
+	}
+	return string(s)
 }
 
 var (
-	errUnexpectedEOF = &CloseError{Code: CloseAbnormalClosure, Text: io.ErrUnexpectedEOF.Error()}
+	// ErrUnexpectedEOF .
+	ErrUnexpectedEOF = &CloseError{Code: CloseAbnormalClosure, Text: io.ErrUnexpectedEOF.Error()}
 )
 
 // OpCode . 4bit
@@ -124,7 +169,8 @@ func (frm *Frame) autoCalcPayloadLen() {
 		// true: payload length is less than 126
 		payloadExtendLen = 0
 	} else if payloadLen <= 65535 {
-		// true: payload length is bigger than 126 less than 2^16
+		// true: payload length is bigger than 126 less than
+		// 63355 = 2^16
 		payloadExtendLen = payloadLen
 		payloadExtendLen = payloadExtendLen << (64 - 16)
 		payloadLen = 126
@@ -162,7 +208,7 @@ func (frm *Frame) setPayload(payload []byte, mode maskMode) *Frame {
 		}
 	case unmask:
 		if frm.Mask == 1 {
-			frm.unmaskPayload()
+			frm.maskPayload()
 		}
 	default:
 		debugErrorf("Frame.setPayload got an invalid maskMode=%s", mode)
@@ -199,14 +245,14 @@ func (frm *Frame) maskPayload() {
 	// frm.Payload = masked
 }
 
-// unmaskPayload .
-func (frm *Frame) unmaskPayload() {
-	masks := genMasks(frm.MaskingKey)
-	for i, v := range frm.Payload {
-		j := i % 4
-		frm.Payload[i] = (v ^ masks[j]) // ^ means XOR
-	}
-}
+// // unmaskPayload .
+// func (frm *Frame) unmaskPayload() {
+// 	masks := genMasks(frm.MaskingKey)
+// 	for i, v := range frm.Payload {
+// 		j := i % 4
+// 		frm.Payload[i] = (v ^ masks[j]) // ^ means XOR
+// 	}
+// }
 
 // to mark current frame is used as control or data
 func (frm *Frame) isControl() bool {
@@ -268,7 +314,8 @@ var (
 	ErrInvalidData = errors.New("invalid websocket data frame")
 )
 
-// decodeToFrame . should noly be test called
+// decodeToFrame .
+// !!!!!! should noly be test called !!!!!!
 func decodeToFrame(buf []byte) (*Frame, error) {
 	if len(buf) < minFrameHeaderSize {
 		return nil, ErrInvalidData

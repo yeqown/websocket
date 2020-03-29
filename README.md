@@ -11,6 +11,7 @@ this is an Go implementation of WebSocket protocol. just for study, **DO NOT USI
 how to use this lib as WebSocket client, as the following code:
 
 ```go
+// examples/use-as-client/main.go
 conn, err = websocket.Dial("ws://localhost:8080/echo")
 if err != nil {
     panic(err)
@@ -27,13 +28,20 @@ go func() {
 for {
     mt, msg, err := conn.ReadMessage()
     if err != nil {
-        if errors.Is(err, io.ErrUnexpectedEOF) {
+        if ce, ok := err.(*websocket.CloseError); ok {
+            fmt.Printf("close err=%d, %s", ce.Code, ce.Text)
             break
         }
         fmt.Printf("recv failed, err=%v\n", err)
+        time.Sleep(1 * time.Second)
     }
     fmt.Printf("messageType=%d, msg=%s\n", mt, msg)
 }
+```
+
+```go
+// example/use-as-server/main.go
+// TODO
 ```
 
 ### Protocol
