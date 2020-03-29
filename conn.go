@@ -169,7 +169,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 	}
 
 	logger.Debugf("got payload=%s", payload)
-	return frmWithoutPayload.setPayload(payload, unmask), nil
+	return frmWithoutPayload.setPayload(payload), nil
 }
 
 // sendDataFrame .

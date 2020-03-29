@@ -127,7 +127,7 @@ func Test_constructDataFrame(t *testing.T) {
 			if tt.want.Mask == 1 {
 				tt.want.MaskingKey = got.MaskingKey
 			}
-			tt.want.setPayload([]byte("hello"), mask)
+			tt.want.setPayload([]byte("hello"))
 
 			assert.Equal(t, tt.want, got)
 		})

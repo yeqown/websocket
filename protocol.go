@@ -188,30 +188,23 @@ func (frm *Frame) genMaskingKey() {
 	frm.MaskingKey = rand.Uint32()
 }
 
-type maskMode string
+// type maskMode string
 
-const (
-	mask   maskMode = "mask"
-	unmask maskMode = "unmask"
-)
+// const (
+// 	mask   maskMode = "mask"
+// 	unmask maskMode = "unmask"
+// )
 
 // setPayload . automatic mask or unmask payload data
-func (frm *Frame) setPayload(payload []byte, mode maskMode) *Frame {
+func (frm *Frame) setPayload(payload []byte) *Frame {
 	// TODO should clear frm.Payload or not ?
 	frm.Payload = make([]byte, len(payload))
 	copy(frm.Payload, payload)
 	logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
-	switch mode {
-	case mask:
-		if frm.Mask == 1 {
-			frm.maskPayload()
-		}
-	case unmask:
-		if frm.Mask == 1 {
-			frm.maskPayload()
-		}
-	default:
-		debugErrorf("Frame.setPayload got an invalid maskMode=%s", mode)
+
+	if frm.Mask == 1 {
+		// true: if mask has been set, then calc maskingkey with payload
+		frm.maskPayload()
 	}
 
 	return frm
@@ -379,7 +372,7 @@ func parseFrameHeader(header []byte) *Frame {
 func constructDataFrame(data []byte) *Frame {
 	frm := constructFrame(opCodeText, true)
 	logger.Debugf("init: %+v", frm)
-	frm.setPayload(data, mask)
+	frm.setPayload(data)
 	logger.Debugf("with payload: %+v", frm)
 	frm.autoCalcPayloadLen()
 	logger.Debugf("calc payload len: %+v", frm)
