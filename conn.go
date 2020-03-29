@@ -160,7 +160,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 	}
 
 	logger.Debugf("c.read(%d) into payload data", remaining)
-	// FIXME: big remaing(uint64) cast loss precision
+	// FIXME: big remaining(uint64) cast loss precision
 	// read blocked here
 	payload, err := c.read(int(remaining))
 	if err != nil {

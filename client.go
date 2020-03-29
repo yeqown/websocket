@@ -121,7 +121,7 @@ var (
 //
 func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 	var (
-		httpSchema string = ""
+		httpSchema string
 	)
 
 	switch opt.schema {
@@ -197,7 +197,7 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 	}
 	logger.Debugf("dialWithContext got response status=%d headers=%+v", resp.StatusCode, resp.Header)
 
-	// verify reponse headers
+	// verify response headers
 	if keep, err := shouldKeep(resp); !keep {
 		logger.Errorf("dialWithContext could not open connection, err=%v", err)
 		return nil, err
@@ -209,7 +209,7 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 // shouldKeep to figure out: should client keep current websocket connection
 // related to status code and repsone headers
 func shouldKeep(resp *http.Response) (keep bool, err error) {
-	body := make([]byte, 0, 1024)
+	var body []byte
 	if body, err = ioutil.ReadAll(resp.Body); err != nil {
 		logger.Error("shouldKeep could not read response.Body")
 		return false, err

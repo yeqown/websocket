@@ -134,7 +134,7 @@ const (
 // help to assemble and read data over TCP bytes stream
 //
 // NOTICE:
-// this defination wastes more space to help understand
+// this definition wastes more space to help understand
 // and each field should be unexported
 //
 // !!!!CURRENTLY, THIS FRAME NOT CONSIDER ABOUT FRAGMENT!!!!
@@ -403,7 +403,7 @@ func constructFrame(opcode OpCode, finnal bool) *Frame {
 		MaskingKey:       0, // masking key generate
 	}
 
-	// generate masking key if neccesary
+	// generate masking key if necessary
 	if frm.Mask == 1 {
 		(&frm).genMaskingKey()
 	}
