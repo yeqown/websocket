@@ -175,7 +175,7 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 	}
 
 	// handle newConn
-	wsConn, err := newConn(netconn)
+	wsConn, err := newConn(netconn, false)
 	if err != nil {
 		logger.Errorf("dialWithContext failed to newConn, err=%v", err)
 		return nil, err

@@ -284,10 +284,14 @@ func encodeFrameTo(frm *Frame) []byte {
 		binary.BigEndian.PutUint64(payloadExtendBuf[:8], frm.PayloadExtendLen)
 		buf = append(buf, payloadExtendBuf...)
 	}
-	// fill fmtMaskingKey into 4 byte
-	maskingKeyBuf := make([]byte, 4)
-	binary.BigEndian.PutUint32(maskingKeyBuf[:4], frm.MaskingKey)
-	buf = append(buf, maskingKeyBuf...)
+
+	// FIXED: if not mask, then no set masking key
+	if frm.Mask == 1 {
+		// fill fmtMaskingKey into 4 byte
+		maskingKeyBuf := make([]byte, 4)
+		binary.BigEndian.PutUint32(maskingKeyBuf[:4], frm.MaskingKey)
+		buf = append(buf, maskingKeyBuf...)
+	}
 
 	// header done, start writing body
 	buf = append(buf, frm.Payload...)
@@ -306,48 +310,6 @@ var (
 	// ErrInvalidData .
 	ErrInvalidData = errors.New("invalid websocket data frame")
 )
-
-// decodeToFrame .
-// !!!!!! should noly be test called !!!!!!
-func decodeToFrame(buf []byte) (*Frame, error) {
-	if len(buf) < minFrameHeaderSize {
-		return nil, ErrInvalidData
-	}
-
-	// 2 means: Header (2 Byte)
-	frm := parseFrameHeader(buf[:2])
-
-	var (
-		payloadExtendLen uint64     // this could be non exist, payloadExtendLen = 0
-		cur              uint64 = 2 // after header
-	)
-
-	switch frm.PayloadLen {
-	case 126:
-		// has 16bit + 32bit = 6B
-		payloadExtendLen = uint64(binary.BigEndian.Uint16(buf[cur : cur+2]))
-		cur += 2
-	case 127:
-		// has 64bit + 32bit = 12B
-		payloadExtendLen = uint64(binary.BigEndian.Uint16(buf[cur : cur+8]))
-		cur += 8
-	}
-	frm.PayloadExtendLen = payloadExtendLen
-
-	// get masking key
-	if frm.Mask == 1 {
-		frm.MaskingKey = binary.BigEndian.Uint32(buf[cur : cur+4])
-		cur += 4
-	}
-
-	var payloadlength uint64 = uint64(frm.PayloadLen)
-	if frm.PayloadExtendLen != 0 {
-		payloadlength = frm.PayloadExtendLen
-	}
-	frm.Payload = buf[cur : cur+payloadlength]
-
-	return frm, nil
-}
 
 // parseFrameHeader . this is used for parse WebSocket frame header
 // header should be (headerSize / Byte) = 112bit / 8bit = 14Byte
@@ -369,26 +331,33 @@ func parseFrameHeader(header []byte) *Frame {
 }
 
 // FIXME: default opCodeText, need support binary
-func constructDataFrame(data []byte) *Frame {
-	frm := constructFrame(opCodeText, true)
-	logger.Debugf("init: %+v", frm)
+func constructDataFrame(data []byte, noMask bool) *Frame {
+	frm := constructFrame(opCodeText, true, noMask)
+	// logger.Debugf("init: %+v", frm)
 	frm.setPayload(data)
-	logger.Debugf("with payload: %+v", frm)
+	// logger.Debugf("with payload: %+v", frm)
 	frm.autoCalcPayloadLen()
-	logger.Debugf("calc payload len: %+v", frm)
+	// logger.Debugf("calc payload len: %+v", frm)
 	return frm
 }
 
-func constructControlFrame(opcode OpCode) *Frame {
-	frm := constructFrame(opcode, true)
+func constructControlFrame(opcode OpCode, noMask bool) *Frame {
+	frm := constructFrame(opcode, true, noMask)
 	return frm
 }
 
-func constructFrame(opcode OpCode, finnal bool) *Frame {
-	var fin uint16 = 1
+func constructFrame(opcode OpCode, finnal bool, noMask bool) *Frame {
+	var (
+		fin  uint16 = 1
+		mask uint16 = 1
+	)
 
 	if !finnal {
 		fin = 0
+	}
+
+	if noMask {
+		mask = 0
 	}
 
 	frm := Frame{
@@ -397,10 +366,10 @@ func constructFrame(opcode OpCode, finnal bool) *Frame {
 		RSV2:             0,
 		RSV3:             0,
 		OpCode:           opcode,
-		Mask:             1, // open mask mode
-		PayloadLen:       0, // this will be calc in encodeFrameTo()
-		PayloadExtendLen: 0, // this will be calc in encodeFrameTo()
-		MaskingKey:       0, // masking key generate
+		Mask:             mask, // open mask mode
+		PayloadLen:       0,    // this will be calc in encodeFrameTo()
+		PayloadExtendLen: 0,    // this will be calc in encodeFrameTo()
+		MaskingKey:       0,    // masking key generate
 	}
 
 	// generate masking key if necessary

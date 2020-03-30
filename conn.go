@@ -52,18 +52,32 @@ const (
 	PongMessage MessageType = MessageType(opCodePong)
 )
 
-// Conn . implement net.Conn by wrap an TCP connection
+// Conn .
 type Conn struct {
+	// conn is underlying TCP connection to send and recv byte stream.
+	// on client side it's opened by net.Dial(protocol, addr)
+	// on server side it can be got by (http.ResponseWrite).(http.Hijacker).Hijack()
 	conn net.Conn
 
 	bufRD *bufio.Reader
 	bufWR *bufio.Writer
 
+	// State marks Conn current state, and it is basis of controling the Conn.
+	// TODO: maybe import an state machine to manage with
 	State ConnState
+
+	// isServer, true means Conn is working on server side
+	// false means Conn is working on client side
+	// TODO: finish server side special handling code
+	isServer bool
+
+	// TODO: add flag to mark current Conn is working for transfering 'Application Data'
 }
 
+// newConn build an websocket.Conn to handle with websocket.Frame
+// there is some different between server side and client.
 // TODO do more work to deal with TCP packet
-func newConn(netconn net.Conn) (*Conn, error) {
+func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 	c := Conn{
 		conn: netconn,
 
@@ -71,6 +85,8 @@ func newConn(netconn net.Conn) (*Conn, error) {
 		bufWR: bufio.NewWriter(netconn),
 
 		State: Connecting,
+
+		isServer: isServer,
 	}
 
 	return &c, nil
@@ -78,6 +94,7 @@ func newConn(netconn net.Conn) (*Conn, error) {
 
 // read n bytes from conn read buffer
 // inspired by gorilla/websocket
+// FIXME: could not read while Conn.State is not "connected"
 func (c *Conn) read(n int) ([]byte, error) {
 	p, err := c.bufRD.Peek(n)
 	if err == io.EOF {
@@ -174,8 +191,9 @@ func (c *Conn) readFrame() (*Frame, error) {
 
 // sendDataFrame .
 // send data frame [text, binary]
+// FIXME could not send while Conn.State is not "connected"
 func (c *Conn) sendDataFrame(data []byte) (err error) {
-	frm := constructDataFrame(data)
+	frm := constructDataFrame(data, c.isServer)
 	if err = c.sendFrame(frm); err != nil {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
 		return
@@ -185,8 +203,9 @@ func (c *Conn) sendDataFrame(data []byte) (err error) {
 
 // sendControlFrame .
 // send control frame [ping, pong, close, continuation]
+// FIXME could not send while Conn.State is not "connected"
 func (c *Conn) sendControlFrame(opcode OpCode) (err error) {
-	frm := constructControlFrame(opcode)
+	frm := constructControlFrame(opcode, c.isServer)
 	if err = c.sendFrame(frm); err != nil {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
 		return
@@ -222,16 +241,17 @@ func (c *Conn) ReadMessage() (mt MessageType, msg []byte, err error) {
 }
 
 // SendMessage .
+// TODO: send with specified messagetType [Text, Binary]
 func (c *Conn) SendMessage(text string) (err error) {
 	return c.sendDataFrame([]byte(text))
 }
 
-// TODO:
+// TODO: frame MUST contains 125 Byte or less payload
 func (c *Conn) handlePing() (err error) {
 	return nil
 }
 
-// TODO:
+// TODO: frame MUST contains same payload with PING frame payload
 func (c *Conn) handlePong() (err error) {
 	return nil
 }

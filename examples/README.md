@@ -90,3 +90,71 @@ recv: hello
 recv: hello
 read error: websocket: close 1006 (abnormal closure): unexpected EOF
 ```
+
+### Server 
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/yeqown/log"
+	"github.com/yeqown/websocket"
+)
+
+var upgrader websocket.Upgrader
+
+func echo(w http.ResponseWriter, req *http.Request) {
+	err := upgrader.Upgrade(w, req, func(conn *websocket.Conn) {
+		defer conn.Close()
+		for {
+			mt, message, err := conn.ReadMessage()
+			if err != nil {
+				log.Errorf("read error, err=%v", err)
+				break
+			}
+			log.Infof("recv: mt=%d, msg=%s", mt, message)
+			err = conn.SendMessage(string(message))
+			if err != nil {
+				log.Errorf("write error: err=%v", err)
+				break
+			}
+		}
+	})
+
+	if err != nil {
+		log.Errorf("upgrade error, err=%v", err)
+		// if _, ok := err.(websocket.HandshakeError); ok {
+		// 	log.Errorf(err)
+		// }
+		return
+	}
+
+	log.Infof("conn upgrade done")
+}
+
+func main() {
+	http.HandleFunc("/echo", echo)
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+```log
+➜  use-as-server git:(master) ✗ go run main.go
+2020/03/30 14:17:34 server.go:104: [DEBUG] Upgrader.Upgrade hackHandshakeResponse finished
+2020/03/30 14:17:34 main.go:38: [INFO] conn upgrade done
+2020/03/30 14:17:36 conn.go:118: [DEBUG] Conn.readFrame got frmWithoutPayload=&{Fin:1 RSV1:0 RSV2:0 RSV3:0 OpCode:1 Mask:1 PayloadLen:12 PayloadExtendLen:0 MaskingKey:0 Payload:[]}
+2020/03/30 14:17:36 conn.go:179: [DEBUG] c.read(12) into payload data
+2020/03/30 14:17:36 conn.go:188: [DEBUG] got payload=w�Dl�R
+                                                           s�X
+2020/03/30 14:17:36 protocol.go:203: [DEBUG] Frame.setPayload got frm.Payload=[14 119 243 68 19 108 227 82 11 115 246 88]
+2020/03/30 14:17:36 main.go:21: [INFO] recv: mt=1, msg=thisisyeqllo
+2020/03/30 14:17:36 protocol.go:203: [DEBUG] Frame.setPayload got frm.Payload=[116 104 105 115 105 115 121 101 113 108 108 111]
+2020/03/30 14:17:36 conn.go:217: [DEBUG] Conn.sendFrame with frame=&{Fin:1 RSV1:0 RSV2:0 RSV3:0 OpCode:1 Mask:0 PayloadLen:12 PayloadExtendLen:0 MaskingKey:0 Payload:[116 104 105 115 105 115 121 101 113 108 108 111]}
+^Csignal: interrupt
+➜  use-as-server git:(master) ✗
+```
