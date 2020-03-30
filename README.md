@@ -41,7 +41,52 @@ for {
 
 ```go
 // example/use-as-server/main.go
-// TODO
+
+import (
+	"net/http"
+
+	"github.com/yeqown/log"
+	"github.com/yeqown/websocket"
+)
+
+var upgrader websocket.Upgrader
+
+func echo(w http.ResponseWriter, req *http.Request) {
+	err := upgrader.Upgrade(w, req, func(conn *websocket.Conn) {
+		defer conn.Close()
+		for {
+			mt, message, err := conn.ReadMessage()
+			if err != nil {
+				log.Errorf("read error, err=%v", err)
+				break
+			}
+			log.Infof("recv: mt=%d, msg=%s", mt, message)
+			err = conn.SendMessage(string(message))
+			if err != nil {
+				log.Errorf("write error: err=%v", err)
+				break
+			}
+		}
+	})
+
+	if err != nil {
+		log.Errorf("upgrade error, err=%v", err)
+		// if _, ok := err.(websocket.HandshakeError); ok {
+		// 	log.Errorf(err)
+		// }
+		return
+	}
+
+	log.Infof("conn upgrade done")
+}
+
+func main() {
+	http.HandleFunc("/echo", echo)
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+	}
+}
 ```
 
 ### Protocol
@@ -50,11 +95,13 @@ The WebSocket Protocol enables two-way communication between a client running un
 
 #### Frame (Core)
 
-TODO: add frame readme
+base frame is following:
+
+<img src="./static/websocket-frame.svg"/>
+
+[READ MORE](./docs/frame.md)
 
 #### How to work
-
-TODO: add note to how write and websocket lib, and how it works from connect to close. it's better to explain with process period images. 
 
 1. build connection from client
 2. accept connection in server side, start ping/pong
@@ -62,7 +109,15 @@ TODO: add note to how write and websocket lib, and how it works from connect to 
     3.0 assemble data frame, according to the protocol by RFC6455
     3.1 handle exceptions (server panic; heartbeat loss)
 4. close connection
- 
+
+### client process
+
+<img src="./static/websocket-process-client.svg"/>
+
+### server process
+
+<img src="./static/websocket-process-server.svg"/>
+
 ## References
 
 * https://tools.ietf.org/html/RFC6455
