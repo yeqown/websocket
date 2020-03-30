@@ -83,6 +83,8 @@ func (e *CloseError) Error() string {
 var (
 	// ErrUnexpectedEOF .
 	ErrUnexpectedEOF = &CloseError{Code: CloseAbnormalClosure, Text: io.ErrUnexpectedEOF.Error()}
+	// ErrInvalidFrame .
+	ErrInvalidFrame = &CloseError{Code: CloseProtocolError, Text: "invalid frame: "}
 )
 
 // OpCode . 4bit
@@ -251,6 +253,27 @@ func (frm *Frame) maskPayload() {
 func (frm *Frame) isControl() bool {
 	return frm.OpCode == opCodePing || frm.OpCode == opCodePong ||
 		frm.OpCode == opCodeClose || frm.OpCode == opCodeContinuation
+}
+
+// isFinnal .
+func (frm *Frame) isFinnal() bool {
+	return frm.Fin == 1
+}
+
+func (frm *Frame) valid() error {
+	var err = ErrInvalidFrame
+	if frm.RSV1 != 0 || frm.RSV2 != 0 || frm.RSV3 != 0 {
+		err.Text += "reserved bit is not 0"
+		return err
+	}
+
+	if frm.Mask == 1 && frm.MaskingKey == 0 {
+		err.Text += "masking key not set"
+		return err
+	}
+
+	// return ErrInvalidFrame
+	return nil
 }
 
 // encodeFrameTo .
