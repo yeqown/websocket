@@ -21,39 +21,46 @@ import (
 
 func mockFrame() *Frame {
 	frm := Frame{
-		Fin:              1,               // uint8  1 bit
-		RSV1:             0,               // uint8  1 bit
-		RSV2:             0,               // uint8  1 bit
-		RSV3:             0,               // uint8  1 bit
-		OpCode:           1,               // OpCode 4 bits
-		Mask:             1,               // uint8  1 bit
-		PayloadLen:       0,               // uint8  7 bits
-		PayloadExtendLen: 0,               // uint64 64 bits
-		MaskingKey:       0,               // uint64 32 bits
-		Payload:          []byte("hello"), // []byte no limit by RFC6455
+		Fin:              1,   // uint8  1 bit
+		RSV1:             0,   // uint8  1 bit
+		RSV2:             0,   // uint8  1 bit
+		RSV3:             0,   // uint8  1 bit
+		OpCode:           1,   // OpCode 4 bits
+		Mask:             1,   // uint8  1 bit
+		PayloadLen:       0,   // uint8  7 bits
+		PayloadExtendLen: 0,   // uint64 64 bits
+		MaskingKey:       0,   // uint64 32 bits
+		Payload:          nil, // []byte no limit by RFC6455
 	}
 
-	frm.PayloadLen = uint16(len(frm.Payload))
-	println("payload len=", frm.PayloadLen, "want=", 5)
+	frm.setPayload([]byte("hello"))
+	if frm.Mask == 1 {
+		(&frm).genMaskingKey()
+	}
 
 	return &frm
 }
 
 // mockFragmentFrames .
-func mockFragmentFrames() []*Frame {
+func mockFragmentFrames(noMask bool) []*Frame {
+	var mask uint16 = 1
+
+	if noMask {
+		mask = 0
+	}
+
 	frame1 := &Frame{
 		Fin: 0,
 		// RSV1:             0,
 		// RSV2:             0,
 		// RSV3:             0,
 		OpCode: opCodeText,
-		Mask:   1,
+		Mask:   mask,
 		// PayloadLen:       0,
 		// PayloadExtendLen: 0,
 		// MaskingKey:       0,
 		Payload: nil,
 	}
-	frame1.setPayload([]byte("frame1"))
 
 	frame2 := &Frame{
 		Fin: 0,
@@ -61,13 +68,12 @@ func mockFragmentFrames() []*Frame {
 		// RSV2:             0,
 		// RSV3:             0,
 		OpCode: opCodeContinuation,
-		Mask:   1,
+		Mask:   mask,
 		// PayloadLen:       0,
 		// PayloadExtendLen: 0,
 		// MaskingKey:       0,
 		Payload: nil,
 	}
-	frame2.setPayload([]byte("frame2"))
 
 	frame3 := &Frame{
 		Fin: 1,
@@ -75,15 +81,26 @@ func mockFragmentFrames() []*Frame {
 		// RSV2:   0,
 		// RSV3:   0,
 		OpCode: opCodeContinuation,
-		Mask:   1,
+		Mask:   mask,
 		// PayloadLen:       0,
 		// PayloadExtendLen: 0,
 		// MaskingKey:       0,
 		Payload: nil,
 	}
-	frame3.setPayload([]byte("frame3"))
 
-	return []*Frame{frame1, frame2, frame3}
+	frms := []*Frame{frame1, frame2, frame3}
+
+	for idx, v := range frms {
+		if v.Mask == 1 {
+			frms[idx].genMaskingKey()
+		}
+
+		frms[idx].setPayload(
+			append([]byte("frame"), byte(idx+1)),
+		)
+	}
+
+	return frms
 }
 
 // decodeToFrame .
@@ -230,8 +247,9 @@ func Test_constructDataFrame(t *testing.T) {
 
 func Test_constructControlFrame(t *testing.T) {
 	type args struct {
-		opcode OpCode
-		noMask bool
+		opcode  OpCode
+		noMask  bool
+		payload []byte
 	}
 	tests := []struct {
 		name string
@@ -242,7 +260,7 @@ func Test_constructControlFrame(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := constructControlFrame(tt.args.opcode, tt.args.noMask)
+			got := constructControlFrame(tt.args.opcode, tt.args.noMask, tt.args.payload)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -272,4 +290,76 @@ func Test_Mask(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, masks)
+}
+
+func TestFrame_valid(t *testing.T) {
+	type fields struct {
+		Fin              uint16
+		RSV1             uint16
+		RSV2             uint16
+		RSV3             uint16
+		OpCode           OpCode
+		Mask             uint16
+		PayloadLen       uint16
+		PayloadExtendLen uint64
+		MaskingKey       uint32
+		Payload          []byte
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "case 0",
+			fields: fields{
+				Fin: 1,
+				// RSV1:             0,
+				// RSV2:             0,
+				// RSV3:             0,
+				// OpCode:           0,
+				// Mask:             0,
+				PayloadLen: 5,
+				// PayloadExtendLen: 0,
+				// MaskingKey:       0,
+				Payload: []byte("hello"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "case 0",
+			fields: fields{
+				Fin: 1,
+				// RSV1:             0,
+				// RSV2:             0,
+				// RSV3:             0,
+				// OpCode:           0,
+				Mask:       1,
+				PayloadLen: 5,
+				// PayloadExtendLen: 0,
+				// MaskingKey:       0,
+				Payload: []byte("hello"),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			frm := &Frame{
+				Fin:              tt.fields.Fin,
+				RSV1:             tt.fields.RSV1,
+				RSV2:             tt.fields.RSV2,
+				RSV3:             tt.fields.RSV3,
+				OpCode:           tt.fields.OpCode,
+				Mask:             tt.fields.Mask,
+				PayloadLen:       tt.fields.PayloadLen,
+				PayloadExtendLen: tt.fields.PayloadExtendLen,
+				MaskingKey:       tt.fields.MaskingKey,
+				Payload:          tt.fields.Payload,
+			}
+			if err := frm.valid(); (err != nil) != tt.wantErr {
+				t.Errorf("Frame.valid() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }

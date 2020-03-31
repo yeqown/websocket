@@ -101,7 +101,6 @@ func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 
 // read n bytes from conn read buffer
 // inspired by gorilla/websocket
-// FIXME: could not read while Conn.State is not "connected"
 func (c *Conn) read(n int) ([]byte, error) {
 	p, err := c.bufRD.Peek(n)
 	if err == io.EOF {
@@ -132,18 +131,18 @@ func (c *Conn) readFrame() (*Frame, error) {
 	switch frmWithoutPayload.PayloadLen {
 	case 126:
 		// has 16bit + 32bit = 6B
-		p, err = c.read(6)
+		p, err = c.read(2)
 		if err != nil {
-			debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
+			debugErrorf("Conn.readFrame failed to c.read(2) payloadlen with 16bit, err=%v", err)
 			return nil, err
 		}
 		payloadExtendLen = uint64(binary.BigEndian.Uint16(p[:2]))
 		remaining = payloadExtendLen
 	case 127:
 		// has 64bit + 32bit = 12B
-		p, err = c.read(12)
+		p, err = c.read(8)
 		if err != nil {
-			debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
+			debugErrorf("Conn.readFrame failed to c.read(8) payloadlen with 16bit, err=%v", err)
 			return nil, err
 		}
 		payloadExtendLen = uint64(binary.BigEndian.Uint16(p[:8]))
@@ -166,14 +165,14 @@ func (c *Conn) readFrame() (*Frame, error) {
 
 	// valid in common rules
 	if err := frmWithoutPayload.valid(); err != nil {
-		debugErrorf("Conn.readFrame is not valid, err=%v", err)
+		debugErrorf("Conn.readFrame is not valid(frm.valid) in common rules, err=%v", err)
 		c.close(CloseProtocolError)
 		return nil, err
 	}
 
 	// valid in Conn rules
 	if err := c.validFrame(frmWithoutPayload); err != nil {
-		debugErrorf("Conn.readFrame is not valid, err=%v", err)
+		debugErrorf("Conn.readFrame is not valid(conn.validFrame) for Conn rules, err=%v", err)
 		return nil, err
 	}
 
@@ -220,7 +219,7 @@ func (c *Conn) sendDataFrame(data []byte) (err error) {
 // send control frame [ping, pong, close, continuation]
 // FIXME could not send while Conn.State is not "connected"
 func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
-	frm := constructControlFrame(opcode, c.isServer)
+	frm := constructControlFrame(opcode, c.isServer, payload)
 	frm.setPayload(payload)
 	if err = c.sendFrame(frm); err != nil {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
@@ -232,7 +231,6 @@ func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
 func (c *Conn) sendFrame(frm *Frame) (err error) {
 	logger.Debugf("Conn.sendFrame with frame=%+v", frm)
 	data := encodeFrameTo(frm)
-	// debugPrintEncodedFrame(data)
 	_, err = c.bufWR.Write(data)
 	if err != nil {
 		debugErrorf("c.sendFrame failed to c.bufWR.Write, err=%v", err)

@@ -208,6 +208,7 @@ func (frm *Frame) setPayload(payload []byte) *Frame {
 		frm.maskPayload()
 	}
 
+	frm.autoCalcPayloadLen()
 	return frm
 }
 
@@ -353,18 +354,22 @@ func parseFrameHeader(header []byte) *Frame {
 }
 
 // FIXME: default opCodeText, need support binary
-func constructDataFrame(data []byte, noMask bool) *Frame {
+func constructDataFrame(payload []byte, noMask bool) *Frame {
 	frm := constructFrame(opCodeText, true, noMask)
 	// logger.Debugf("init: %+v", frm)
-	frm.setPayload(data)
+	frm.setPayload(payload)
 	// logger.Debugf("with payload: %+v", frm)
-	frm.autoCalcPayloadLen()
+	// frm.autoCalcPayloadLen()
 	// logger.Debugf("calc payload len: %+v", frm)
 	return frm
 }
 
-func constructControlFrame(opcode OpCode, noMask bool) *Frame {
+func constructControlFrame(opcode OpCode, noMask bool, payload []byte) *Frame {
 	frm := constructFrame(opcode, true, noMask)
+	if len(payload) != 0 {
+		frm.setPayload(payload)
+		// frm.autoCalcPayloadLen()
+	}
 	return frm
 }
 

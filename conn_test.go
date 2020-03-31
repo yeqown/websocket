@@ -18,6 +18,8 @@ func mockConn(rw io.ReadWriter) *Conn {
 		bufWR: bufio.NewWriter(rw),
 
 		State: Connected,
+
+		isServer: true,
 	}
 }
 
@@ -26,12 +28,15 @@ func Test_Conn_SendAndRead(t *testing.T) {
 	conn := mockConn(buf)
 	srcFrm := mockFrame()
 
+	// mock server send, it will no mask, then should mask payload manually
 	err := conn.sendFrame(srcFrm)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
+	srcFrm.maskPayload()
 
+	// mock server read client, it will mask
 	dstFrm, err := conn.readFrame()
 	if err != nil {
 		t.Error(err)
@@ -44,11 +49,12 @@ func Test_Conn_SendAndRead(t *testing.T) {
 func Test_Conn_Fragment(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	conn := mockConn(buf)
-	frms := mockFragmentFrames()
+	frms := mockFragmentFrames(true)
 
 	wantPayload := make([]byte, 0, 18)
 	wantMT := MessageType(frms[0].OpCode)
 
+	// mock server send
 	for _, v := range frms {
 		err := conn.sendFrame(v)
 		if err != nil {
@@ -60,6 +66,8 @@ func Test_Conn_Fragment(t *testing.T) {
 	}
 
 	t.Logf("want mt=%d, want payload=%s", wantMT, wantPayload)
+	// mock client read
+	conn.isServer = false
 	mt, payload, err := conn.ReadMessage()
 	if err != nil {
 		t.Error(err)
@@ -67,4 +75,47 @@ func Test_Conn_Fragment(t *testing.T) {
 	}
 	assert.Equal(t, wantMT, mt)
 	assert.Equal(t, wantPayload, payload)
+}
+
+func Test_Conn_PingPong(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+
+	// server send ping
+	if err := conn.ping(); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	// client handle ping
+	conn.isServer = false
+	pingFrm, err := conn.readFrame()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	assert.Equal(t, pingFrm.OpCode, opCodePing)
+	assert.Equal(t, pingFrm.Fin, uint16(1))
+	assert.GreaterOrEqual(t, pingFrm.PayloadLen, uint16(0))
+
+	if err := conn.handlePing(pingFrm); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	// mock server read
+	conn.isServer = true
+	pongFrm, err := conn.readFrame()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	assert.Equal(t, pongFrm.OpCode, opCodePong)
+	assert.Equal(t, pongFrm.Fin, uint16(1))
+	assert.GreaterOrEqual(t, pongFrm.PayloadLen, uint16(0))
+	assert.Equal(t, pongFrm.Payload, pingFrm.Payload)
+	if err := conn.handlePong(pingFrm); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 }

@@ -103,40 +103,35 @@ func Test_dialWithContext(t *testing.T) {
 	}
 }
 
-func Test_sendAndRecv(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// func Test_sendAndRecv(t *testing.T) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
 
-	do := &DialOption{
-		host:     "localhost",
-		port:     "8080",
-		schema:   "ws",
-		path:     "/echo",
-		rawquery: "",
-	}
+// 	do := &DialOption{
+// 		host:     "localhost",
+// 		port:     "8080",
+// 		schema:   "ws",
+// 		path:     "/echo",
+// 		rawquery: "",
+// 	}
 
-	conn, err := dialWithContext(ctx, do)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	_ = conn
-	// defer conn.Close()
+// 	conn, err := dialWithContext(ctx, do)
+// 	if err != nil {
+// 		t.Error(err)
+// 		t.FailNow()
+// 	}
+// 	_ = conn
+// 	// defer conn.Close()
 
-	if err := conn.SendMessage("0000"); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+// 	if err := conn.SendMessage("0000"); err != nil {
+// 		t.Error(err)
+// 		t.FailNow()
+// 	}
 
-	mt, msg, err := conn.ReadMessage()
-	t.Logf("messageType=%d, msg=%s, err=%v", mt, msg, err)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-}
-
-// TODO test ping and pong
-func Test_PingAndPong(t *testing.T) {
-
-}
+// 	mt, msg, err := conn.ReadMessage()
+// 	t.Logf("messageType=%d, msg=%s, err=%v", mt, msg, err)
+// 	if err != nil {
+// 		t.Error(err)
+// 		t.FailNow()
+// 	}
+// }
