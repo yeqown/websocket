@@ -7,15 +7,22 @@ import (
 )
 
 var (
-	debugMode = true
-	// debugMode = false
-	logger = log.NewLogger()
+	debugMode = false
+	logger    = log.NewLogger()
 )
 
 func init() {
 	logger.SetLogLevel(log.LevelInfo)
 
 	if debugMode {
+		logger.SetLogLevel(log.LevelDebug)
+	}
+}
+
+// SetDebug . open debug mode
+func SetDebug(debug bool) {
+	if debug {
+		debugMode = debug
 		logger.SetLogLevel(log.LevelDebug)
 	}
 }

@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"crypto/tls"
 	"testing"
 	"time"
 
@@ -135,3 +136,12 @@ func Test_dialWithContext(t *testing.T) {
 // 		t.FailNow()
 // 	}
 // }
+
+func TestWithTLS(t *testing.T) {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	got := WithTLS(tlsConfig)
+	assert.NotEmpty(t, got.tlsConfig)
+}

@@ -27,13 +27,13 @@ import (
 )
 
 // WithTLS .
-func WithTLS(cfg *tls.Config) *DialOption {
-	return &DialOption{tlsConfig: cfg}
+func WithTLS(cfg *tls.Config) DialOption {
+	return DialOption{TLSConfig: cfg}
 }
 
 // WithContext .
-func WithContext(ctx context.Context) *DialOption {
-	return &DialOption{ctx: ctx}
+func WithContext(ctx context.Context) DialOption {
+	return DialOption{Ctx: ctx}
 }
 
 // DialOption .
@@ -44,9 +44,9 @@ type DialOption struct {
 	path     string
 	rawquery string
 
-	tlsConfig *tls.Config
-
-	ctx context.Context
+	// option fields
+	TLSConfig *tls.Config
+	Ctx       context.Context
 }
 
 func (do DialOption) needTLS() bool {
@@ -61,18 +61,19 @@ func Dial(URL string, opts ...DialOption) (*Conn, error) {
 	}
 
 	// mergego.Merge opts
-	for _, opt := range opts {
-		mergo.Merge(dst, opt)
+	for idx, opt := range opts {
+		logger.Debugf("external opt: %+v", opt)
+		mergo.Merge(dst, opts[idx])
 	}
 
-	if dst.ctx == nil {
+	if dst.Ctx == nil {
 		var cancel context.CancelFunc
-		dst.ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+		dst.Ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 	}
 
 	logger.Debugf("Dial got finnal DialOption is: %+v", dst)
-	return dialWithContext(dst.ctx, dst)
+	return dialWithContext(dst.Ctx, dst)
 }
 
 // parseURL to parse WebSocket URL into DialOption with base options
@@ -121,19 +122,19 @@ var (
 //
 func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 	var (
-		httpSchema string
+		schema string
 	)
 
 	switch opt.schema {
 	case "ws":
-		httpSchema = "http"
+		schema = "http"
 	case "wss":
-		httpSchema = "https"
+		schema = "https"
 	default:
 		return nil, ErrInvalidSchema
 	}
 
-	url := fmt.Sprintf("%s://%s:%s%s?%s", httpSchema, opt.host, opt.port, opt.path, opt.rawquery)
+	url := fmt.Sprintf("%s://%s:%s%s?%s", schema, opt.host, opt.port, opt.path, opt.rawquery)
 	logger.Debugf("http request url=%s", url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -165,12 +166,12 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 
 	if opt.needTLS() {
 		// true: TLS handshake
-		tlsconn := tls.Client(netconn, opt.tlsConfig)
+		tlsconn := tls.Client(netconn, opt.TLSConfig)
 		netconn = tlsconn
-		err = tlsHandshake(tlsconn, opt.tlsConfig)
+		err = tlsHandshake(tlsconn, opt.TLSConfig)
 	}
 	if err != nil {
-		logger.Errorf("dialWithContext TLS handshake, err=%v", err)
+		logger.Errorf("dialWithContext TLS handshake, with TLSConfig=%+v err=%v", opt.TLSConfig, err)
 		return nil, err
 	}
 
