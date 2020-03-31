@@ -97,7 +97,7 @@ The WebSocket Protocol enables two-way communication between a client running un
 
 base frame is following:
 
-<img src="./static/websocket-frame.svg"/>
+<img align="center" src="./static/websocket-frame.svg"/>
 
 [READ MORE](./docs/frame.md)
 
@@ -110,13 +110,11 @@ base frame is following:
     3.1 handle exceptions (server panic; heartbeat loss)
 4. close connection
 
-### client process
+<img align="center" src="./static/websocket-process.svg"/>
 
-<img src="./static/websocket-process-client.svg"/>
+### client and server sequence
 
-### server process
-
-<img src="./static/websocket-process-server.svg"/>
+<img align="center" src="./static/websocket-seq.svg">
 
 ## References
 
