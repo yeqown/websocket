@@ -175,7 +175,7 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 	}
 
 	// handle newConn
-	wsConn, err := newConn(netconn, false)
+	conn, err := newConn(netconn, false)
 	if err != nil {
 		logger.Errorf("dialWithContext failed to newConn, err=%v", err)
 		return nil, err
@@ -183,14 +183,14 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 
 	// with context
 	// send request and handshake
-	if err = req.WithContext(ctx).Write(wsConn.bufWR); err != nil {
+	if err = req.WithContext(ctx).Write(conn.bufWR); err != nil {
 		logger.Errorf("dialWithContext failed to write Upgrade Request, err=%v", err)
 		return nil, err
 	}
-	wsConn.bufWR.Flush()
+	conn.bufWR.Flush()
 
 	// handle response
-	resp, err := http.ReadResponse(wsConn.bufRD, req)
+	resp, err := http.ReadResponse(conn.bufRD, req)
 	if err != nil {
 		logger.Errorf("dialWithContext failed to read response, err=%v", err)
 		return nil, err
@@ -203,7 +203,8 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 		return nil, err
 	}
 
-	return wsConn, nil
+	conn.State = Connected
+	return conn, nil
 }
 
 // shouldKeep to figure out: should client keep current websocket connection

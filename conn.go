@@ -111,9 +111,9 @@ func (c *Conn) read(n int) ([]byte, error) {
 }
 
 func (c *Conn) readFrame() (*Frame, error) {
-	if !c.Connected() {
-		return nil, errors.New("websocket: could not send if state not Connected")
-	}
+	// if !c.Connected() {
+	// 	return nil, errors.New("websocket: could not send if state not Connected")
+	// }
 
 	p, err := c.read(2)
 	// this would be blocked, if no data comes
@@ -290,17 +290,21 @@ func (c *Conn) handlePong(frm *Frame) (err error) {
 
 // handle close frame
 // to READ close code and text info
-func (c *Conn) handleClose(frm *Frame) (err error) {
-	code := binary.BigEndian.Uint16(frm.Payload[:2])
-	message := frm.Payload[2:]
-	err = &CloseError{
-		Code: int(code),
-		Text: string(message),
+func (c *Conn) handleClose(frm *Frame) error {
+	var err = &CloseError{
+		Code: CloseNormalClosure,
+	}
+
+	if frm.PayloadLen >= 2 {
+		code := binary.BigEndian.Uint16(frm.Payload[:2])
+		message := frm.Payload[2:]
+		err.Code = int(code)
+		err.Text = string(message)
 	}
 	logger.Debugf("c.handleClose got a frame with closeError=%v", err)
 
-	c.close(int(code))
-	return
+	c.close(err.Code)
+	return err
 }
 
 // ping .

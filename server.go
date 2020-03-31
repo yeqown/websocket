@@ -105,6 +105,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	logger.Debugf("Upgrader.Upgrade hackHandshakeResponse finished")
 
 	conn, _ := newConn(netconn, true)
+	conn.State = Connected
 	// start a goroutinue to handle with websocket.Conn
 	go func() {
 		defer func() {

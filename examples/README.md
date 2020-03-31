@@ -107,12 +107,15 @@ var upgrader websocket.Upgrader
 
 func echo(w http.ResponseWriter, req *http.Request) {
 	err := upgrader.Upgrade(w, req, func(conn *websocket.Conn) {
-		defer conn.Close()
 		for {
 			mt, message, err := conn.ReadMessage()
 			if err != nil {
+				if closeErr, ok := err.(*websocket.CloseError); ok {
+					log.Warnf("conn closed, beacuse=%v", closeErr)
+					break
+				}
 				log.Errorf("read error, err=%v", err)
-				break
+				continue
 			}
 			log.Infof("recv: mt=%d, msg=%s", mt, message)
 			err = conn.SendMessage(string(message))
@@ -121,6 +124,8 @@ func echo(w http.ResponseWriter, req *http.Request) {
 				break
 			}
 		}
+
+		log.Info("conn finished")
 	})
 
 	if err != nil {
