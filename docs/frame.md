@@ -1,12 +1,13 @@
 ## Frame
 
 frame is core concept in webscoket, also in other appliction protocol. it was defined as following:
+
 <img src="../static/websocket-frame.svg" />
 
-as you see in up image, it can be divide into 4 part: 
+as you see in up image, it can be divide into 4 parts: 
 * header (16 bit)
-* payload extern length(0/16/64 bits)
-* masking key (0 / 32 bits)
+* payload extern length (0/16/64 bits)
+* masking key (0/32 bits)
 * payload (ulimited)
 
 ### header notes
@@ -14,7 +15,9 @@ Among them, header contains the most information in 16 bit:
 ```sh
 0   1   2   3   4   5   6   7   8 
 |FIN|RSV1|RSV1|RSV1 | OPCODE    |
- 0 1 2 3 4 5 6 7
+
+0   1   2   3   4   5   6   7   8 
+|MASK|     PAYLOAD LEN          |
 ```
 
 * FIN, means finnal
@@ -36,6 +39,8 @@ TODO:
 
 ### frame examples (data)
 
+TODO:
+
 1. normal
 
 2. with mask been set
@@ -43,3 +48,5 @@ TODO:
 3. with extern payload length been set
 
 ### control frame notes
+
+TODO:

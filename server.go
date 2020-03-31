@@ -78,6 +78,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 		err     error
 	)
 
+	// get underlying tcp connection
 	netconn, brw, err = h.Hijack()
 	if err != nil {
 		debugErrorf("Upgrader.Upgrade failed to h.Hijack, err=%v", err)
@@ -95,7 +96,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	// TODO: support Sec-WebSocket-Protocol header
 
 	// finish reponse and send
-	// FIXED: find another way to send response
+	// FIXED: http.Hijacker could not h.Hijack twice
 	if err = hackHandshakeResponse(brw.Writer, respHeaders, "101"); err != nil {
 		netconn.Close()
 		debugErrorf("Upgrader.Upgrade could not write response, err=%v", err)
@@ -103,12 +104,8 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	}
 	logger.Debugf("Upgrader.Upgrade hackHandshakeResponse finished")
 
-	// get underlying tcp connection
 	conn, _ := newConn(netconn, true)
-
 	// start a goroutinue to handle with websocket.Conn
-	// TODO: wether this way can work or not?
-	// if http.Handler returns, is this means connection done?
 	go func() {
 		defer func() {
 			if err, ok := recover().(error); ok {

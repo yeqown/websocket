@@ -15,8 +15,14 @@ package websocket
 import (
 	"bufio"
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
+)
+
+var (
+	ErrMaskNotSet = errors.New("mask is not set")
+	ErrMaskSet    = errors.New("mask is set")
 )
 
 // ConnState .
@@ -68,7 +74,7 @@ type Conn struct {
 
 	// isServer, true means Conn is working on server side
 	// false means Conn is working on client side
-	// TODO: finish server side special handling code
+	// it helps Conn support server-side code
 	isServer bool
 
 	// TODO: add flag to mark current Conn is working for transfering 'Application Data'
@@ -76,7 +82,6 @@ type Conn struct {
 
 // newConn build an websocket.Conn to handle with websocket.Frame
 // there is some different between server side and client.
-// TODO do more work to deal with TCP packet
 func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 	c := Conn{
 		conn: netconn,
@@ -157,7 +162,12 @@ func (c *Conn) readFrame() (*Frame, error) {
 		frmWithoutPayload.MaskingKey = binary.BigEndian.Uint32(p)
 	}
 
-	// TODO: valid frame format
+	// valid frame format
+	if err := c.validFrame(frmWithoutPayload); err != nil {
+		debugErrorf("Conn.readFrame is not valid, err=%v", err)
+		return nil, err
+	}
+
 	// handle with close, ping, pong frame
 	switch frmWithoutPayload.OpCode {
 	case opCodeText, opCodeBinary:
@@ -278,8 +288,8 @@ func (c *Conn) handleClose(frm *Frame) (err error) {
 }
 
 func (c *Conn) close() (err error) {
-	// FIXME: only do following work when Conn is not recving or sending
-	// wait other work finishing
+	// FIXME: only do following works while Conn is not recving or sending,
+	// otherwise wait other work finishing
 	if err = c.sendControlFrame(opCodeClose); err != nil {
 		debugErrorf("c.handleClose failed to c.sendControlFrame, err=%v", err)
 		return
@@ -304,4 +314,21 @@ func (c *Conn) Close() {
 // Connected .
 func (c *Conn) Connected() bool {
 	return c.State == Connected
+}
+
+// readFrame to call
+func (c *Conn) validFrame(frm *Frame) error {
+	if c.isServer {
+		// frame from client
+		if frm.Mask != 1 {
+			return ErrMaskNotSet
+		}
+	} else {
+		// frame from server
+		if frm.Mask != 0 {
+			return ErrMaskSet
+		}
+	}
+
+	return nil
 }

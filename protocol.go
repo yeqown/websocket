@@ -197,7 +197,6 @@ func (frm *Frame) genMaskingKey() {
 
 // setPayload . automatic mask or unmask payload data
 func (frm *Frame) setPayload(payload []byte) *Frame {
-	// TODO should clear frm.Payload or not ?
 	frm.Payload = make([]byte, len(payload))
 	copy(frm.Payload, payload)
 	logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
@@ -261,8 +260,8 @@ func encodeFrameTo(frm *Frame) []byte {
 		part1 uint16 // from FIN to PayloadLen
 	)
 
-	// TODO: should move autoCalcPayloadLen into another timing of process ?
-	frm.autoCalcPayloadLen()
+	// should move autoCalcPayloadLen into another timing of process ?
+	// frm.autoCalcPayloadLen()
 
 	part1 |= (frm.Fin << finOffset)
 	// logger.Debugf("before part1=%s, fmr.Fin=%s, after op=%s", formatUint16(part1), formatUint16(frm.Fin<<finOffset), formatUint16(part1))
