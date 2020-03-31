@@ -39,6 +39,53 @@ func mockFrame() *Frame {
 	return &frm
 }
 
+// mockFragmentFrames .
+func mockFragmentFrames() []*Frame {
+	frame1 := &Frame{
+		Fin: 0,
+		// RSV1:             0,
+		// RSV2:             0,
+		// RSV3:             0,
+		OpCode: opCodeText,
+		Mask:   1,
+		// PayloadLen:       0,
+		// PayloadExtendLen: 0,
+		// MaskingKey:       0,
+		Payload: nil,
+	}
+	frame1.setPayload([]byte("frame1"))
+
+	frame2 := &Frame{
+		Fin: 0,
+		// RSV1:             0,
+		// RSV2:             0,
+		// RSV3:             0,
+		OpCode: opCodeContinuation,
+		Mask:   1,
+		// PayloadLen:       0,
+		// PayloadExtendLen: 0,
+		// MaskingKey:       0,
+		Payload: nil,
+	}
+	frame2.setPayload([]byte("frame2"))
+
+	frame3 := &Frame{
+		Fin: 1,
+		// RSV1:   0,
+		// RSV2:   0,
+		// RSV3:   0,
+		OpCode: opCodeContinuation,
+		Mask:   1,
+		// PayloadLen:       0,
+		// PayloadExtendLen: 0,
+		// MaskingKey:       0,
+		Payload: nil,
+	}
+	frame3.setPayload([]byte("frame3"))
+
+	return []*Frame{frame1, frame2, frame3}
+}
+
 // decodeToFrame .
 // !!!!!! should noly be test called !!!!!!
 func decodeToFrame(buf []byte) (*Frame, error) {

@@ -14,8 +14,10 @@ package websocket
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 )
@@ -162,41 +164,44 @@ func (c *Conn) readFrame() (*Frame, error) {
 		frmWithoutPayload.MaskingKey = binary.BigEndian.Uint32(p)
 	}
 
-	// valid frame format
+	// valid in common rules
+	if err := frmWithoutPayload.valid(); err != nil {
+		debugErrorf("Conn.readFrame is not valid, err=%v", err)
+		c.close(CloseProtocolError)
+		return nil, err
+	}
+
+	// valid in Conn rules
 	if err := c.validFrame(frmWithoutPayload); err != nil {
 		debugErrorf("Conn.readFrame is not valid, err=%v", err)
 		return nil, err
 	}
 
-	// handle with close, ping, pong frame
-	switch frmWithoutPayload.OpCode {
-	case opCodeText, opCodeBinary:
-		// TODO: support binary data format
-		// data frame, pass
-	case opCodePing:
-		c.handlePing()
-		return frmWithoutPayload, nil
-	case opCodePong:
-		c.handlePong()
-		return frmWithoutPayload, nil
-	case opCodeClose:
-		err = c.handleClose(frmWithoutPayload)
-		return frmWithoutPayload, err
-	case opCodeContinuation:
-		// TODO: support fragment
-	}
-
-	logger.Debugf("c.read(%d) into payload data", remaining)
 	// FIXME: big remaining(uint64) cast loss precision
 	// read blocked here
+	logger.Debugf("Conn.readFrame c.read(%d) into payload data", remaining)
 	payload, err := c.read(int(remaining))
 	if err != nil {
 		debugErrorf("Conn.readFrame failed to c.read(payload), err=%v", err)
 		return nil, err
 	}
+	logger.Debugf("Conn.readFrame got payload=%s then set into frmWithoutPayload", payload)
+	frmWithoutPayload.setPayload(payload)
 
-	logger.Debugf("got payload=%s", payload)
-	return frmWithoutPayload.setPayload(payload), nil
+	// handle with close, ping, pong frame
+	switch frmWithoutPayload.OpCode {
+	case opCodeText, opCodeBinary, opCodeContinuation:
+		// DONE: support fragment
+		// TODO: support binary data format
+	case opCodePing:
+		c.handlePing(frmWithoutPayload)
+	case opCodePong:
+		c.handlePong(frmWithoutPayload)
+	case opCodeClose:
+		err = c.handleClose(frmWithoutPayload)
+	}
+
+	return frmWithoutPayload, nil
 }
 
 // sendDataFrame .
@@ -214,8 +219,9 @@ func (c *Conn) sendDataFrame(data []byte) (err error) {
 // sendControlFrame .
 // send control frame [ping, pong, close, continuation]
 // FIXME could not send while Conn.State is not "connected"
-func (c *Conn) sendControlFrame(opcode OpCode) (err error) {
+func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
 	frm := constructControlFrame(opcode, c.isServer)
+	frm.setPayload(payload)
 	if err = c.sendFrame(frm); err != nil {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
 		return
@@ -243,10 +249,20 @@ func (c *Conn) ReadMessage() (mt MessageType, msg []byte, err error) {
 		debugErrorf("Conn.ReadMessage failed to c.readFrame, err=%v", err)
 		return NoFrame, nil, err
 	}
-
 	mt = MessageType(frm.OpCode)
-	msg = frm.Payload
 
+	// read fragment of frame
+	buf := bytes.NewBuffer(nil)
+	buf.Write(frm.Payload)
+	for !frm.isFinnal() {
+		if frm, err = c.readFrame(); err != nil {
+			debugErrorf("Conn.ReadMessage failed to c.readFrame, err=%v", err)
+			return NoFrame, nil, err
+		}
+		buf.Write(frm.Payload)
+	}
+
+	msg = buf.Bytes()
 	return
 }
 
@@ -256,41 +272,55 @@ func (c *Conn) SendMessage(text string) (err error) {
 	return c.sendDataFrame([]byte(text))
 }
 
-// TODO: frame MUST contains 125 Byte or less payload
-func (c *Conn) handlePing() (err error) {
-	return nil
+// frame MUST contains 125 Byte or less payload
+func (c *Conn) handlePing(frm *Frame) (err error) {
+	return c.pong(frm.Payload)
 }
 
-// TODO: frame MUST contains same payload with PING frame payload
-func (c *Conn) handlePong() (err error) {
+// frame MUST contains same payload with PING frame payload
+func (c *Conn) handlePong(frm *Frame) (err error) {
+	// if recv pong frame, do nothing?
 	return nil
 }
 
 // handle close frame
 // to READ close code and text info
 func (c *Conn) handleClose(frm *Frame) (err error) {
-	p, err := c.read(int(frm.PayloadLen))
-	if err != nil {
-		debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
-		return err
-	}
+	// p, err := c.read(int(frm.PayloadLen))
+	// if err != nil {
+	// 	debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
+	// 	return err
+	// }
 
-	code := binary.BigEndian.Uint16(p[:2])
-	message := p[2:]
+	code := binary.BigEndian.Uint16(frm.Payload[:2])
+	message := frm.Payload[2:]
 	err = &CloseError{
 		Code: int(code),
 		Text: string(message),
 	}
 	logger.Debugf("c.handleClose got a frame with closeError=%v", err)
 
-	c.close()
+	c.close(int(code))
 	return
 }
 
-func (c *Conn) close() (err error) {
-	// FIXME: only do following works while Conn is not recving or sending,
-	// otherwise wait other work finishing
-	if err = c.sendControlFrame(opCodeClose); err != nil {
+// ping .
+func (c *Conn) ping() (err error) {
+	return c.sendControlFrame(opCodePing, []byte("ping"))
+}
+
+// pong .
+func (c *Conn) pong(pingPayload []byte) (err error) {
+	return c.sendControlFrame(opCodePong, pingPayload)
+}
+
+// TODO: add close message to close frame
+func (c *Conn) close(closeCode int) (err error) {
+	// FIXME: only do following work when Conn is not recving or sending
+	// wait other work finishing
+	s := fmt.Sprintf("%d no close message todo", closeCode)
+
+	if err = c.sendControlFrame(opCodeClose, []byte(s)); err != nil {
 		debugErrorf("c.handleClose failed to c.sendControlFrame, err=%v", err)
 		return
 	}
@@ -306,7 +336,7 @@ func (c *Conn) close() (err error) {
 
 // Close .
 func (c *Conn) Close() {
-	if err := c.close(); err != nil {
+	if err := c.close(CloseAbnormalClosure); err != nil {
 		debugErrorf("Conn.Close failed to close, err=%v", err)
 	}
 }
