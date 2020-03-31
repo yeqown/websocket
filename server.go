@@ -95,7 +95,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	respHeaders.Set("Sec-WebSocket-Accept", computeAcceptKey(challengeKey))
 	// TODO: support Sec-WebSocket-Protocol header
 
-	// finish reponse and send
+	// finish response and send
 	// FIXED: http.Hijacker could not h.Hijack twice
 	if err = hackHandshakeResponse(brw.Writer, respHeaders, "101"); err != nil {
 		netconn.Close()
@@ -120,7 +120,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	return nil
 }
 
-// handshakeCheck . check request headers and set neccesary headers to Response
+// handshakeCheck . check request headers and set necessary headers to Response
 func (ug Upgrader) handshakeCheck(w http.ResponseWriter, req *http.Request) error {
 	h := req.Header.Get("Connection")
 	if h != "Upgrade" {

@@ -119,3 +119,33 @@ func Test_Conn_PingPong(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func Test_Conn_close(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	closeErr := &CloseError{Code: CloseNormalClosure}
+	closeErr.Text = closeErr.Error()
+
+	err := conn.close(closeErr.Code)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	conn.isServer = false
+	conn.State = Connected
+	frm, err := conn.readFrame()
+	if err != nil {
+		closeErr2, ok := err.(*CloseError)
+		if !ok {
+			t.Error(err)
+			t.FailNow()
+		}
+
+		assert.Equal(t, closeErr.Code, closeErr2.Code)
+		assert.Equal(t, closeErr.Error(), closeErr2.Error())
+	}
+
+	assert.Equal(t, frm.OpCode, opCodeClose)
+	assert.Equal(t, frm.Fin, uint16(1))
+}

@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 )
@@ -70,7 +69,7 @@ type Conn struct {
 	bufRD *bufio.Reader
 	bufWR *bufio.Writer
 
-	// State marks Conn current state, and it is basis of controling the Conn.
+	// State marks Conn current state, and it is basis of controlling the Conn.
 	// TODO: maybe import an state machine to manage with
 	State ConnState
 
@@ -79,7 +78,7 @@ type Conn struct {
 	// it helps Conn support server-side code
 	isServer bool
 
-	// TODO: add flag to mark current Conn is working for transfering 'Application Data'
+	// TODO: add flag to mark current Conn is working for transferring 'Application Data'
 }
 
 // newConn build an websocket.Conn to handle with websocket.Frame
@@ -112,6 +111,10 @@ func (c *Conn) read(n int) ([]byte, error) {
 }
 
 func (c *Conn) readFrame() (*Frame, error) {
+	if !c.Connected() {
+		return nil, errors.New("websocket: could not send if state not Connected")
+	}
+
 	p, err := c.read(2)
 	// this would be blocked, if no data comes
 	if err != nil {
@@ -200,12 +203,11 @@ func (c *Conn) readFrame() (*Frame, error) {
 		err = c.handleClose(frmWithoutPayload)
 	}
 
-	return frmWithoutPayload, nil
+	return frmWithoutPayload, err
 }
 
 // sendDataFrame .
 // send data frame [text, binary]
-// FIXME could not send while Conn.State is not "connected"
 func (c *Conn) sendDataFrame(data []byte) (err error) {
 	frm := constructDataFrame(data, c.isServer)
 	if err = c.sendFrame(frm); err != nil {
@@ -217,7 +219,7 @@ func (c *Conn) sendDataFrame(data []byte) (err error) {
 
 // sendControlFrame .
 // send control frame [ping, pong, close, continuation]
-// FIXME could not send while Conn.State is not "connected"
+
 func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
 	frm := constructControlFrame(opcode, c.isServer, payload)
 	frm.setPayload(payload)
@@ -228,7 +230,12 @@ func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
 	return nil
 }
 
+// FIXED could not send while Conn.State is not "connected"
 func (c *Conn) sendFrame(frm *Frame) (err error) {
+	if !c.Connected() {
+		return errors.New("websocket: could not send if state not Connected")
+	}
+
 	logger.Debugf("Conn.sendFrame with frame=%+v", frm)
 	data := encodeFrameTo(frm)
 	_, err = c.bufWR.Write(data)
@@ -284,12 +291,6 @@ func (c *Conn) handlePong(frm *Frame) (err error) {
 // handle close frame
 // to READ close code and text info
 func (c *Conn) handleClose(frm *Frame) (err error) {
-	// p, err := c.read(int(frm.PayloadLen))
-	// if err != nil {
-	// 	debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
-	// 	return err
-	// }
-
 	code := binary.BigEndian.Uint16(frm.Payload[:2])
 	message := frm.Payload[2:]
 	err = &CloseError{
@@ -312,13 +313,17 @@ func (c *Conn) pong(pingPayload []byte) (err error) {
 	return c.sendControlFrame(opCodePong, pingPayload)
 }
 
-// TODO: add close message to close frame
+// DONE: add close message to close frame
 func (c *Conn) close(closeCode int) (err error) {
 	// FIXME: only do following work when Conn is not recving or sending
 	// wait other work finishing
-	s := fmt.Sprintf("%d no close message todo", closeCode)
+	p := make([]byte, 2, 16)
+	closeErr := &CloseError{Code: closeCode}
+	binary.BigEndian.PutUint16(p[:2], uint16(closeCode))
+	p = append(p, []byte(closeErr.Error())...)
+	logger.Debugf("c.close sending close frame, payload=%s", p)
 
-	if err = c.sendControlFrame(opCodeClose, []byte(s)); err != nil {
+	if err = c.sendControlFrame(opCodeClose, p); err != nil {
 		debugErrorf("c.handleClose failed to c.sendControlFrame, err=%v", err)
 		return
 	}
