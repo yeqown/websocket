@@ -63,3 +63,32 @@ func debugErrorf(format string, args ...interface{}) {
 func formatUint16(v uint16) string {
 	return fmt.Sprintf("%016b", v)
 }
+
+var frameFormat = `Frame{
+    Fin:				%d,
+    RSV1:				%d,
+    RSV2:				%d,
+    RSV3:				%d,
+    OpCode:				%d,
+    Mask:				%d,
+    PayloadLen:			%d,
+    PayloadExtendLen:	%d,
+    MaskingKey:			%d,
+    Payload: 			%d,
+}`
+
+func debugPrintFrame(frm *Frame) {
+	logger.Debugf(
+		frameFormat,
+		frm.Fin,
+		frm.RSV1,
+		frm.RSV2,
+		frm.RSV3,
+		frm.OpCode,
+		frm.Mask,
+		frm.PayloadLen,
+		frm.PayloadExtendLen,
+		frm.MaskingKey,
+		len(frm.Payload),
+	)
+}

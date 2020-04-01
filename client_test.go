@@ -143,5 +143,5 @@ func TestWithTLS(t *testing.T) {
 	}
 
 	got := WithTLS(tlsConfig)
-	assert.NotEmpty(t, got.tlsConfig)
+	assert.NotEmpty(t, got.TLSConfig)
 }

@@ -15,7 +15,7 @@ func echo(w http.ResponseWriter, req *http.Request) {
 			mt, message, err := conn.ReadMessage()
 			if err != nil {
 				if closeErr, ok := err.(*websocket.CloseError); ok {
-					log.Warnf("conn closed, beacuse=%v", closeErr)
+					log.Warnf("conn closed, because=%v", closeErr)
 					break
 				}
 				log.Errorf("read error, err=%v", err)

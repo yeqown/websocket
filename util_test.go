@@ -51,3 +51,29 @@ func Test_computeAcceptKey(t *testing.T) {
 		})
 	}
 }
+
+// func Test_bigendianUint64(t *testing.T) {
+// 	type args struct {
+// 		v uint64
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 		want uint16
+// 	}{
+// 		{
+// 			name: "case 0",
+// 			args: args{
+// 				v: 123 << (64 - 16),
+// 			},
+// 			want: 123,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if got := bigendian16BitFromUint64(tt.args.v); got != tt.want {
+// 				t.Errorf("bigendianUint64() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }

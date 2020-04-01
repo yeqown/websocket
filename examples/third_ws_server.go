@@ -1,62 +1,42 @@
 package main
 
 import (
-	"flag"
 	"log"
+	"net/http"
 
-	"github.com/fasthttp/websocket"
-	"github.com/valyala/fasthttp"
+	"golang.org/x/net/websocket"
 )
 
-var upgrader = websocket.FastHTTPUpgrader{
-	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true },
-}
+// var upgrader = websocket.FastHTTPUpgrader{
+// 	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true },
+// }
 
-func echoView(ctx *fasthttp.RequestCtx) {
-	err := upgrader.Upgrade(ctx, func(ws *websocket.Conn) {
-		defer ws.Close()
-		for {
-			mt, message, err := ws.ReadMessage()
-			if err != nil {
-				log.Println("read error:", err)
-				break
-			}
-			log.Printf("recv: %s", message)
-			err = ws.WriteMessage(mt, message)
-			if err != nil {
-				log.Println("write error:", err)
-				break
-			}
-		}
-	})
+// EchoServer .
+func EchoServer(conn *websocket.Conn) {
+	var message = make([]byte, 5)
 
-	if err != nil {
-		if _, ok := err.(websocket.HandshakeError); ok {
-			log.Println(err)
+	for {
+		_, err := conn.Read(message)
+		if err != nil {
+			log.Println("read error:", err)
+			break
 		}
-		return
+		log.Printf("recv: %s", message)
+		_, err = conn.Write(message)
+		if err != nil {
+			log.Println("write error:", err)
+			break
+		}
 	}
-
-	log.Println("conn done")
 }
 
 func main() {
-	flag.Parse()
-	log.SetFlags(0)
-
-	requestHandler := func(ctx *fasthttp.RequestCtx) {
-		switch string(ctx.Path()) {
-		case "/echo":
-			echoView(ctx)
-		default:
-			ctx.Error("Unsupported path", fasthttp.StatusNotFound)
-		}
+	srv := websocket.Server{
+		Config:  websocket.Config{},
+		Handler: EchoServer,
 	}
 
-	server := fasthttp.Server{
-		Name:    "EchoExample",
-		Handler: requestHandler,
+	if err := http.ListenAndServe(":8080", srv); err != nil {
+		panic("ListenAndServe: " + err.Error())
 	}
-
-	log.Fatal(server.ListenAndServe(":8080"))
 }

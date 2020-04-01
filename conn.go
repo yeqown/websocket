@@ -17,7 +17,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 )
 
@@ -87,7 +89,8 @@ func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 	c := Conn{
 		conn: netconn,
 
-		bufRD: bufio.NewReader(netconn),
+		bufRD: bufio.NewReaderSize(netconn, 65535), // 65535B = 64KB
+		// bufRD: bufio.NewReader(netconn),         // with default buffer size=4096B Byte = 4KB
 		bufWR: bufio.NewWriter(netconn),
 
 		State: Connecting,
@@ -148,7 +151,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 			debugErrorf("Conn.readFrame failed to c.read(8) payloadlen with 16bit, err=%v", err)
 			return nil, err
 		}
-		payloadExtendLen = uint64(binary.BigEndian.Uint16(p[:8]))
+		payloadExtendLen = uint64(binary.BigEndian.Uint64(p[:8]))
 		remaining = payloadExtendLen
 	default:
 		remaining = uint64(frmWithoutPayload.PayloadLen)
@@ -179,26 +182,42 @@ func (c *Conn) readFrame() (*Frame, error) {
 		return nil, err
 	}
 
-	// FIXME: big remaining(uint64) cast loss precision
-	// read blocked here
+	// FIXED: big remaining(uint64) cast loss precision
+	var (
+		payload = make([]byte, 0, remaining)
+	)
+
 	logger.Debugf("Conn.readFrame c.read(%d) into payload data", remaining)
-	payload, err := c.read(int(remaining))
+	for remaining > 65535 {
+		// true: bufio.Reader can read 65535 byte as most at once
+		p, err := c.read(65535)
+		if err != nil {
+			debugErrorf("Conn.readFrame failed to c.read(payload), err=%v", err)
+			return nil, err
+		}
+		payload = append(payload, p...)
+		remaining -= 65535
+	}
+
+	// less part to read
+	p, err = c.read(int(remaining))
 	if err != nil {
 		debugErrorf("Conn.readFrame failed to c.read(payload), err=%v", err)
 		return nil, err
 	}
-	logger.Debugf("Conn.readFrame got payload=%s then set into frmWithoutPayload", payload)
+	payload = append(payload, p...)
+	// logger.Debugf("Conn.readFrame got payload=%s then set into frmWithoutPayload", payload)
 	frmWithoutPayload.setPayload(payload)
 
 	// handle with close, ping, pong frame
 	switch frmWithoutPayload.OpCode {
 	case opCodeText, opCodeBinary, opCodeContinuation:
 		// DONE: support fragment
-		// TODO: support binary data format
+		// DONE: support binary data format
 	case opCodePing:
-		c.handlePing(frmWithoutPayload)
+		err = c.handlePing(frmWithoutPayload)
 	case opCodePong:
-		c.handlePong(frmWithoutPayload)
+		err = c.handlePong(frmWithoutPayload)
 	case opCodeClose:
 		err = c.handleClose(frmWithoutPayload)
 	}
@@ -208,8 +227,15 @@ func (c *Conn) readFrame() (*Frame, error) {
 
 // sendDataFrame .
 // send data frame [text, binary]
-func (c *Conn) sendDataFrame(data []byte) (err error) {
-	frm := constructDataFrame(data, c.isServer)
+// TODO: limit send payload size, into 65535 [maybe auto fragment the payload]
+func (c *Conn) sendDataFrame(data []byte, opcode OpCode) (err error) {
+	switch opcode {
+	case opCodeText, opCodeBinary:
+	default:
+		return fmt.Errorf("invalid opcode=%d for data frame", opcode)
+	}
+
+	frm := constructDataFrame(data, c.isServer, opcode)
 	if err = c.sendFrame(frm); err != nil {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
 		return
@@ -236,7 +262,8 @@ func (c *Conn) sendFrame(frm *Frame) (err error) {
 		return errors.New("websocket: could not send if state not Connected")
 	}
 
-	logger.Debugf("Conn.sendFrame with frame=%+v", frm)
+	// logger.Debugf("Conn.sendFrame with frame=%+v", frm)
+	debugPrintFrame(frm)
 	data := encodeFrameTo(frm)
 	_, err = c.bufWR.Write(data)
 	if err != nil {
@@ -271,10 +298,20 @@ func (c *Conn) ReadMessage() (mt MessageType, msg []byte, err error) {
 	return
 }
 
-// SendMessage .
-// TODO: send with specified messagetType [Text, Binary]
+// SendMessage . sending text data to other side
 func (c *Conn) SendMessage(text string) (err error) {
-	return c.sendDataFrame([]byte(text))
+	return c.sendDataFrame([]byte(text), opCodeText)
+}
+
+// SendBinary . sending bianry data to other-side
+func (c *Conn) SendBinary(r io.Reader) (err error) {
+	payload, err := ioutil.ReadAll(r)
+	if err != nil {
+		debugErrorf("c.SendBinary failed to ioutil.ReadAll, err=%v", err)
+		return err
+	}
+
+	return c.sendDataFrame(payload, opCodeBinary)
 }
 
 // frame MUST contains 125 Byte or less payload
@@ -343,6 +380,7 @@ func (c *Conn) close(closeCode int) (err error) {
 
 // Close .
 func (c *Conn) Close() {
+	c.State = Closing
 	if err := c.close(CloseAbnormalClosure); err != nil {
 		debugErrorf("Conn.Close failed to close, err=%v", err)
 	}

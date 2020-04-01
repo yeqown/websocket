@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func mockConn(rw io.ReadWriter) *Conn {
 	return &Conn{
 		conn: nil,
 
-		bufRD: bufio.NewReader(rw),
+		bufRD: bufio.NewReaderSize(rw, 65535),
 		bufWR: bufio.NewWriter(rw),
 
 		State: Connected,
@@ -26,7 +27,7 @@ func mockConn(rw io.ReadWriter) *Conn {
 func Test_Conn_SendAndRead(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	conn := mockConn(buf)
-	srcFrm := mockFrame()
+	srcFrm := mockFrame(nil)
 
 	// mock server send, it will no mask, then should mask payload manually
 	err := conn.sendFrame(srcFrm)
@@ -34,6 +35,65 @@ func Test_Conn_SendAndRead(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
+	// unmask payload to origin
+	srcFrm.maskPayload()
+
+	// mock server read client, it will mask
+	dstFrm, err := conn.readFrame()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	assert.Equal(t, srcFrm, dstFrm)
+}
+
+func Test_Conn_SendAndRead_over125(t *testing.T) {
+	// SetDebug(true)
+
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := strings.Repeat("s", 65535)
+	srcFrm := mockFrame([]byte(payload))
+
+	// mock server send, it will no mask, then should mask payload manually
+	err := conn.sendFrame(srcFrm)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	// unmask payload to origin
+	srcFrm.maskPayload()
+
+	// mock server read client, it will mask
+	dstFrm, err := conn.readFrame()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	// SetDebug(true)
+	debugPrintFrame(srcFrm)
+	debugPrintFrame(dstFrm)
+
+	assert.Equal(t, srcFrm, dstFrm)
+}
+
+func Test_Conn_SendAndRead_over65535(t *testing.T) {
+	SetDebug(true)
+
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := strings.Repeat("s", 65535+10)
+	srcFrm := mockFrame([]byte(payload))
+
+	// mock server send, it will no mask, then should mask payload manually
+	err := conn.sendFrame(srcFrm)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	// unmask payload to origin
 	srcFrm.maskPayload()
 
 	// mock server read client, it will mask
@@ -148,4 +208,20 @@ func Test_Conn_close(t *testing.T) {
 
 	assert.Equal(t, frm.OpCode, opCodeClose)
 	assert.Equal(t, frm.Fin, uint16(1))
+}
+
+func Test_Conn_sendDataFrame(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte("goodbye")
+
+	if err := conn.sendDataFrame(payload, opCodeContinuation); err == nil {
+		t.Error("could not pass invalid opCode")
+		t.FailNow()
+	}
+
+	if err := conn.sendDataFrame(payload, opCodeText); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 }

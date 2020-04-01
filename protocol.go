@@ -174,7 +174,7 @@ func (frm *Frame) autoCalcPayloadLen() {
 		// true: payload length is bigger than 126 less than
 		// 63355 = 2^16
 		payloadExtendLen = payloadLen
-		payloadExtendLen = payloadExtendLen << (64 - 16)
+		// payloadExtendLen = payloadExtendLen
 		payloadLen = 126
 	} else {
 		payloadExtendLen = payloadLen
@@ -201,7 +201,11 @@ func (frm *Frame) genMaskingKey() {
 func (frm *Frame) setPayload(payload []byte) *Frame {
 	frm.Payload = make([]byte, len(payload))
 	copy(frm.Payload, payload)
-	logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+	if len(payload) > 256 {
+		logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
+	} else {
+		logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+	}
 
 	if frm.Mask == 1 {
 		// true: if mask has been set, then calc maskingkey with payload
@@ -301,8 +305,14 @@ func encodeFrameTo(frm *Frame) []byte {
 	// start from 0th byte
 	// fill part1 into 2 byte
 	binary.BigEndian.PutUint16(buf[:2], part1)
-	if frm.PayloadExtendLen > 0 {
-		// if need, fill payloadExtendLen into 8 byte
+
+	// FIXED: fill payloadExtendLen into 8 byte
+	switch frm.PayloadLen {
+	case 126:
+		payloadExtendBuf := make([]byte, 2)
+		binary.BigEndian.PutUint16(payloadExtendBuf[:2], uint16(frm.PayloadExtendLen))
+		buf = append(buf, payloadExtendBuf...)
+	case 127:
 		payloadExtendBuf := make([]byte, 8)
 		binary.BigEndian.PutUint64(payloadExtendBuf[:8], frm.PayloadExtendLen)
 		buf = append(buf, payloadExtendBuf...)
@@ -353,9 +363,9 @@ func parseFrameHeader(header []byte) *Frame {
 	return frm
 }
 
-// FIXME: default opCodeText, need support binary
-func constructDataFrame(payload []byte, noMask bool) *Frame {
-	frm := constructFrame(opCodeText, true, noMask)
+// FIXED: default opCodeText, need support binary
+func constructDataFrame(payload []byte, noMask bool, opcode OpCode) *Frame {
+	frm := constructFrame(opcode, true, noMask)
 	// logger.Debugf("init: %+v", frm)
 	frm.setPayload(payload)
 	// logger.Debugf("with payload: %+v", frm)

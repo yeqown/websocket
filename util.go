@@ -24,3 +24,9 @@ func computeAcceptKey(challengeKey string) string {
 	h.Write(keyGUID)
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
+
+// // get high 16bit from uint64
+// func bigendian16BitFromUint64(v uint64) uint16 {
+// 	v = v >> (64 - 16)
+// 	return uint16(v)
+// }

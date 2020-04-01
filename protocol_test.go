@@ -14,12 +14,13 @@ package websocket
 
 import (
 	"encoding/binary"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func mockFrame() *Frame {
+func mockFrame(payload []byte) *Frame {
 	frm := Frame{
 		Fin:              1,   // uint8  1 bit
 		RSV1:             0,   // uint8  1 bit
@@ -33,9 +34,14 @@ func mockFrame() *Frame {
 		Payload:          nil, // []byte no limit by RFC6455
 	}
 
-	frm.setPayload([]byte("hello"))
 	if frm.Mask == 1 {
 		(&frm).genMaskingKey()
+	}
+
+	if len(payload) == 0 {
+		frm.setPayload([]byte("hello"))
+	} else {
+		frm.setPayload(payload)
 	}
 
 	return &frm
@@ -125,7 +131,7 @@ func decodeToFrame(buf []byte) (*Frame, error) {
 		cur += 2
 	case 127:
 		// has 64bit + 32bit = 12B
-		payloadExtendLen = uint64(binary.BigEndian.Uint16(buf[cur : cur+8]))
+		payloadExtendLen = uint64(binary.BigEndian.Uint64(buf[cur : cur+8]))
 		cur += 8
 	}
 	frm.PayloadExtendLen = payloadExtendLen
@@ -146,7 +152,7 @@ func decodeToFrame(buf []byte) (*Frame, error) {
 }
 
 func Test_EncodeFrame_Decode(t *testing.T) {
-	src := mockFrame()
+	src := mockFrame(nil)
 	buf := encodeFrameTo(src)
 	debugPrintEncodedFrame(buf)
 
@@ -206,6 +212,7 @@ func Test_constructDataFrame(t *testing.T) {
 	type args struct {
 		data   []byte
 		noMask bool
+		opcode OpCode
 	}
 	tests := []struct {
 		name string
@@ -217,6 +224,7 @@ func Test_constructDataFrame(t *testing.T) {
 			args: args{
 				data:   []byte("hello"),
 				noMask: false,
+				opcode: opCodeText,
 			},
 			want: &Frame{
 				Fin:              1,
@@ -231,10 +239,30 @@ func Test_constructDataFrame(t *testing.T) {
 				Payload:          nil,
 			},
 		},
+		{
+			name: "case 1",
+			args: args{
+				data:   []byte("hello"),
+				noMask: false,
+				opcode: opCodeBinary,
+			},
+			want: &Frame{
+				Fin:              1,
+				RSV1:             0,
+				RSV2:             0,
+				RSV3:             0,
+				OpCode:           opCodeBinary,
+				Mask:             1,
+				PayloadLen:       uint16(len([]byte("hello"))),
+				PayloadExtendLen: 0,
+				MaskingKey:       0,
+				Payload:          nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := constructDataFrame(tt.args.data, tt.args.noMask)
+			got := constructDataFrame(tt.args.data, tt.args.noMask, tt.args.opcode)
 			if tt.want.Mask == 1 {
 				tt.want.MaskingKey = got.MaskingKey
 			}
@@ -267,7 +295,7 @@ func Test_constructControlFrame(t *testing.T) {
 }
 
 func Test_FrameMaskAndUnmask(t *testing.T) {
-	frm := mockFrame()
+	frm := mockFrame(nil)
 	want := frm.Payload
 	t.Logf("before %+v", frm)
 	frm.maskPayload()
@@ -292,7 +320,7 @@ func Test_Mask(t *testing.T) {
 	assert.Equal(t, expected, masks)
 }
 
-func TestFrame_valid(t *testing.T) {
+func Test_Frame_valid(t *testing.T) {
 	type fields struct {
 		Fin              uint16
 		RSV1             uint16
@@ -362,4 +390,55 @@ func TestFrame_valid(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_Frame_setPayload_over65535(t *testing.T) {
+	frm := mockFrame(nil)
+	over65535Byte := strings.Repeat("s", 65535+10)
+	frm.setPayload([]byte(over65535Byte))
+
+	t.Log(frm.PayloadLen, frm.PayloadExtendLen, len(over65535Byte))
+
+	assert.Equal(t, uint16(127), frm.PayloadLen)
+	assert.Equal(t, len(over65535Byte), len(frm.Payload))
+	assert.Equal(t, uint64(65535+10), frm.PayloadExtendLen)
+
+	p := encodeFrameTo(frm)
+	dstFrm, err := decodeToFrame(p)
+	if err != nil {
+		// assert.Empty(t, err)
+		t.Error(err)
+		t.FailNow()
+	}
+	assert.Equal(t, frm, dstFrm)
+}
+
+func Test_Frame_setPayload_over125less65535(t *testing.T) {
+	SetDebug(true)
+
+	frm := mockFrame(nil)
+	less65535byte := strings.Repeat("s", 65535)
+	frm.setPayload([]byte(less65535byte))
+
+	t.Log("origin frame: ", frm.PayloadLen, frm.PayloadExtendLen, len(less65535byte))
+
+	assert.Equal(t, uint16(126), frm.PayloadLen)
+	assert.Equal(t, len(less65535byte), len(frm.Payload))
+	assert.Equal(t, uint64(65535), frm.PayloadExtendLen)
+
+	p := encodeFrameTo(frm)
+	// debugPrintEncodedFrame(p[:8])
+
+	dstFrm, err := decodeToFrame(p)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	t.Log("decoded frame: ", frm.PayloadLen, frm.PayloadExtendLen, len(less65535byte))
+	assert.Equal(t, frm, dstFrm)
+	// assert.Equal(t, frm.MaskingKey, dstFrm.MaskingKey)
+	// assert.Equal(t, frm.Mask, dstFrm.Mask)
+	// assert.Equal(t, frm.Payload, dstFrm.Payload)
+	// assert.Equal(t, frm.PayloadLen, dstFrm.PayloadLen)
+	// assert.Equal(t, frm.PayloadExtendLen, dstFrm.PayloadExtendLen)
 }
