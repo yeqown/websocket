@@ -20,8 +20,8 @@ func generateChallengeKey() (string, error) {
 
 func computeAcceptKey(challengeKey string) string {
 	h := sha1.New()
-	h.Write([]byte(challengeKey))
-	h.Write(keyGUID)
+	_, _ = h.Write([]byte(challengeKey))
+	_, _ = h.Write(keyGUID)
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
