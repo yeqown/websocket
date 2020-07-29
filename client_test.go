@@ -16,7 +16,7 @@ func Test_parseURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *DialOption
+		want    *options
 		wantErr bool
 	}{
 		{
@@ -24,7 +24,7 @@ func Test_parseURL(t *testing.T) {
 			args: args{
 				URL: "ws://www.baidu.com",
 			},
-			want: &DialOption{
+			want: &options{
 				host:     "www.baidu.com",
 				port:     "80",
 				schema:   "ws",
@@ -38,7 +38,7 @@ func Test_parseURL(t *testing.T) {
 			args: args{
 				URL: "ws://www.baidu.com:1234/path?query=q",
 			},
-			want: &DialOption{
+			want: &options{
 				host:     "www.baidu.com",
 				port:     "1234",
 				schema:   "ws",
@@ -52,7 +52,7 @@ func Test_parseURL(t *testing.T) {
 			args: args{
 				URL: "wss://www.baidu.com:4433/path?query=q",
 			},
-			want: &DialOption{
+			want: &options{
 				host:     "www.baidu.com",
 				port:     "4433",
 				schema:   "wss",
@@ -89,7 +89,7 @@ func Test_dialWithContext(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	do := &DialOption{
+	do := &options{
 		host:     "127.0.0.1",
 		port:     "8080",
 		schema:   "ws",
@@ -108,7 +108,7 @@ func Test_dialWithContext(t *testing.T) {
 // 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 // 	defer cancel()
 
-// 	do := &DialOption{
+// 	do := &options{
 // 		host:     "localhost",
 // 		port:     "8080",
 // 		schema:   "ws",
@@ -142,6 +142,9 @@ func TestWithTLS(t *testing.T) {
 		InsecureSkipVerify: true,
 	}
 
-	got := WithTLS(tlsConfig)
-	assert.NotEmpty(t, got.tlsConfig)
+	do := options{}
+	optWithTLS := WithTLS(tlsConfig)
+	optWithTLS(&do)
+
+	assert.Equal(t, tlsConfig, do.tlsConfig)
 }

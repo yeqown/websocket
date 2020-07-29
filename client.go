@@ -20,90 +20,26 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
-
-	"github.com/imdario/mergo"
 )
-
-// WithTLS .
-func WithTLS(cfg *tls.Config) DialOption {
-	return DialOption{TLSConfig: cfg}
-}
-
-// WithContext .
-func WithContext(ctx context.Context) DialOption {
-	return DialOption{Ctx: ctx}
-}
-
-// DialOption .
-type DialOption struct {
-	host     string
-	port     string
-	schema   string
-	path     string
-	rawquery string
-
-	// option fields
-	TLSConfig *tls.Config
-	Ctx       context.Context
-}
-
-func (do DialOption) needTLS() bool {
-	return do.schema == "wss"
-}
 
 // Dial .
 func Dial(URL string, opts ...DialOption) (*Conn, error) {
-	dst, err := parseURL(URL)
+	do, err := parseURL(URL)
 	if err != nil {
 		return nil, err
 	}
 
-	// mergego.Merge opts
-	for idx, opt := range opts {
-		logger.Debugf("external opt: %+v", opt)
-		mergo.Merge(dst, opts[idx])
+	// apply options
+	for _, opt := range opts {
+		opt(do)
 	}
+	logger.Debugf("Dial got final DialOption is: %+v", do)
 
-	if dst.Ctx == nil {
-		var cancel context.CancelFunc
-		dst.Ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	logger.Debugf("Dial got finnal DialOption is: %+v", dst)
-	return dialWithContext(dst.Ctx, dst)
-}
-
-// parseURL to parse WebSocket URL into DialOption with base options
-// includes: schema, host, port, path, rawquery
-func parseURL(URL string) (*DialOption, error) {
-	u, err := url.Parse(URL)
-	if err != nil {
-		return nil, err
-	}
-
-	do := DialOption{
-		schema:   u.Scheme,
-		host:     u.Hostname(),
-		port:     u.Port(),
-		path:     u.Path,
-		rawquery: u.RawQuery,
-	}
-
-	if do.port == "" {
-		switch do.schema {
-		case "ws":
-			do.port = "80"
-		case "wss":
-			do.port = "443"
-		default:
-			return nil, ErrInvalidSchema
-		}
-	}
-
-	return &do, nil
+	return dialWithContext(ctx, do)
 }
 
 var (
@@ -120,12 +56,12 @@ var (
 // 2. send HTTP request to handshake and upgrade
 // 3. finish building WebSocket connection
 //
-func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
+func dialWithContext(ctx context.Context, do *options) (*Conn, error) {
 	var (
 		schema string
 	)
 
-	switch opt.schema {
+	switch do.schema {
 	case "ws":
 		schema = "http"
 	case "wss":
@@ -134,7 +70,7 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 		return nil, ErrInvalidSchema
 	}
 
-	url := fmt.Sprintf("%s://%s:%s%s?%s", schema, opt.host, opt.port, opt.path, opt.rawquery)
+	url := fmt.Sprintf("%s://%s:%s%s?%s", schema, do.host, do.port, do.path, do.rawquery)
 	logger.Debugf("http request url=%s", url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -145,33 +81,33 @@ func dialWithContext(ctx context.Context, opt *DialOption) (*Conn, error) {
 	// set headers, RFC6455 Section-4.1 page[17+]
 	reqHeaders := http.Header{}
 	reqHeaders.Add("Connection", "Upgrade")
-	reqHeaders.Add("Host", fmt.Sprintf("%s:%s", opt.host, opt.port))
+	reqHeaders.Add("Host", fmt.Sprintf("%s:%s", do.host, do.port))
 	reqHeaders.Add("Upgrade", "websocket")
 	reqHeaders.Add("Sec-WebSocket-Version", "13")
 	secKey, _ := generateChallengeKey()
 	reqHeaders.Add("Sec-WebSocket-Key", secKey)
 	// copy reqHeaders into req.Header
-	if err = mergo.MapWithOverwrite(&req.Header, reqHeaders); err != nil {
-		logger.Errorf("dialWithContext failed to merge request headers, err=%v", err)
-		return nil, err
+
+	for k, v := range reqHeaders {
+		req.Header.Set(k, v[0])
 	}
-	logger.Debugf("dialWithContext send requet with headers=%+v", req.Header)
+	logger.Debugf("dialWithContext send request with headers=%+v", req.Header)
 
 	// dial tcp conn
-	netconn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", opt.host, opt.port))
+	netconn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", do.host, do.port))
 	if err != nil {
 		logger.Errorf("dialWithContext failed to dial remote over TCP, err=%v", err)
 		return nil, err
 	}
 
-	if opt.needTLS() {
+	if do.needTLS() {
 		// true: TLS handshake
-		tlsconn := tls.Client(netconn, opt.TLSConfig)
+		tlsconn := tls.Client(netconn, do.tlsConfig)
 		netconn = tlsconn
-		err = tlsHandshake(tlsconn, opt.TLSConfig)
+		err = tlsHandshake(tlsconn, do.tlsConfig)
 	}
 	if err != nil {
-		logger.Errorf("dialWithContext TLS handshake, with TLSConfig=%+v err=%v", opt.TLSConfig, err)
+		logger.Errorf("dialWithContext TLS handshake, with TLSConfig=%+v err=%v", do.tlsConfig, err)
 		return nil, err
 	}
 

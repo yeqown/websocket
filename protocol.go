@@ -166,7 +166,7 @@ func (frm *Frame) autoCalcPayloadLen() {
 		payloadLen       uint64 = uint64(len(frm.Payload))
 		payloadExtendLen uint64
 	)
-	// auto set payload len and payload extented length
+	// auto set payload len and payload extended length
 	if payloadLen <= 125 {
 		// true: payload length is less than 126
 		payloadExtendLen = 0
@@ -185,7 +185,7 @@ func (frm *Frame) autoCalcPayloadLen() {
 	frm.PayloadExtendLen = payloadExtendLen
 }
 
-// ... generate random maskingkey
+// ... generate random masking-key
 func (frm *Frame) genMaskingKey() {
 	frm.MaskingKey = rand.Uint32()
 }
@@ -204,7 +204,7 @@ func (frm *Frame) setPayload(payload []byte) *Frame {
 	logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
 
 	if frm.Mask == 1 {
-		// true: if mask has been set, then calc maskingkey with payload
+		// true: if mask has been set, then calc masking-key with payload
 		frm.maskPayload()
 	}
 
@@ -235,7 +235,7 @@ func (frm *Frame) maskPayload() {
 	masks := genMasks(frm.MaskingKey)
 	for i, v := range frm.Payload {
 		j := i % 4
-		frm.Payload[i] = (v ^ masks[j]) // ^ means XOR
+		frm.Payload[i] = v ^ masks[j] // ^ means XOR
 	}
 	// frm.Payload = masked
 }
@@ -255,8 +255,8 @@ func (frm *Frame) isControl() bool {
 		frm.OpCode == opCodeClose || frm.OpCode == opCodeContinuation
 }
 
-// isFinnal .
-func (frm *Frame) isFinnal() bool {
+// isFinal .
+func (frm *Frame) isFinal() bool {
 	return frm.Fin == 1
 }
 
@@ -287,16 +287,16 @@ func encodeFrameTo(frm *Frame) []byte {
 	// should move autoCalcPayloadLen into another timing of process ?
 	// frm.autoCalcPayloadLen()
 
-	part1 |= (frm.Fin << finOffset)
+	part1 |= frm.Fin << finOffset
 	// logger.Debugf("before part1=%s, fmr.Fin=%s, after op=%s", formatUint16(part1), formatUint16(frm.Fin<<finOffset), formatUint16(part1))
-	part1 |= (frm.RSV1 << rsv1Offset)
+	part1 |= frm.RSV1 << rsv1Offset
 	// logger.Debugf("before part1=%s, fmr.RSV1=%s, after op=%s", formatUint16(part1), formatUint16(frm.RSV1<<rsv1Offset), formatUint16(part1))
-	part1 |= (frm.RSV2 << rsv2Offset)
-	part1 |= (frm.RSV3 << rsv3Offset)
-	part1 |= (uint16(frm.OpCode) << opcodeOffset)
+	part1 |= frm.RSV2 << rsv2Offset
+	part1 |= frm.RSV3 << rsv3Offset
+	part1 |= uint16(frm.OpCode) << opcodeOffset
 	// logger.Debugf("before part1=%s, fmr.OpCode=%s, after op=%s", formatUint16(part1), formatUint16((uint16(frm.OpCode) << opcodeOffset)), formatUint16(part1))
-	part1 |= (frm.Mask << maskOffset)
-	part1 |= (frm.PayloadLen << payloadLenOffset)
+	part1 |= frm.Mask << maskOffset
+	part1 |= frm.PayloadLen << payloadLenOffset
 
 	// start from 0th byte
 	// fill part1 into 2 byte

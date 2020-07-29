@@ -106,7 +106,7 @@ func (c *Conn) read(n int) ([]byte, error) {
 		err = ErrUnexpectedEOF
 		return nil, err
 	}
-	c.bufRD.Discard(len(p))
+	_, _ = c.bufRD.Discard(len(p))
 	return p, err
 }
 
@@ -196,9 +196,9 @@ func (c *Conn) readFrame() (*Frame, error) {
 		// DONE: support fragment
 		// TODO: support binary data format
 	case opCodePing:
-		c.handlePing(frmWithoutPayload)
+		_ = c.handlePing(frmWithoutPayload)
 	case opCodePong:
-		c.handlePong(frmWithoutPayload)
+		_ = c.handlePong(frmWithoutPayload)
 	case opCodeClose:
 		err = c.handleClose(frmWithoutPayload)
 	}
@@ -259,7 +259,7 @@ func (c *Conn) ReadMessage() (mt MessageType, msg []byte, err error) {
 	// read fragment of frame
 	buf := bytes.NewBuffer(nil)
 	buf.Write(frm.Payload)
-	for !frm.isFinnal() {
+	for !frm.isFinal() {
 		if frm, err = c.readFrame(); err != nil {
 			debugErrorf("Conn.ReadMessage failed to c.readFrame, err=%v", err)
 			return NoFrame, nil, err

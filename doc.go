@@ -1,7 +1,6 @@
 // Package websocket is an Go implementation of WebSocket protocol.
 // just for study, DO NOT USING IN PRODUCTION !!!,
 // so it will be easy to read and SIMPLE.
-package websocket
 
 // 0                   1                   2                   3
 // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -101,3 +100,4 @@ package websocket
 // after any "Extension data".  The length of the "Application data"
 // is equal to the payload length minus the length of the "Extension
 // data".
+package websocket

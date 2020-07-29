@@ -68,7 +68,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	h, ok := w.(http.Hijacker)
 	if !ok {
 		debugErrorf("Upgrader.Upgrade failed to cast w => http.Hijacker")
-		ug.returnError(w, http.StatusInternalServerError, "not implement http.Hijacker")
+		_ = ug.returnError(w, http.StatusInternalServerError, "not implement http.Hijacker")
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	netconn, brw, err = h.Hijack()
 	if err != nil {
 		debugErrorf("Upgrader.Upgrade failed to h.Hijack, err=%v", err)
-		ug.returnError(w, http.StatusInternalServerError, err.Error())
+		_ = ug.returnError(w, http.StatusInternalServerError, err.Error())
 		return nil
 	}
 	// _ = brw
@@ -98,7 +98,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	// finish response and send
 	// FIXED: http.Hijacker could not h.Hijack twice
 	if err = hackHandshakeResponse(brw.Writer, respHeaders, "101"); err != nil {
-		netconn.Close()
+		_ = netconn.Close()
 		debugErrorf("Upgrader.Upgrade could not write response, err=%v", err)
 		return err
 	}
@@ -106,7 +106,7 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 
 	conn, _ := newConn(netconn, true)
 	conn.State = Connected
-	// start a goroutinue to handle with websocket.Conn
+	// start a goroutine to handle with websocket.Conn
 	go func() {
 		defer func() {
 			if err, ok := recover().(error); ok {
@@ -162,12 +162,12 @@ func (ug Upgrader) returnError(w http.ResponseWriter, statusCode int, reason str
 // FIXED: flush data into Connection
 func hackHandshakeResponse(buf *bufio.Writer, respHeaders http.Header, body string) (err error) {
 	// buf := bytes.NewBuffer(nil)
-	buf.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
+	_, _ = buf.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
 	for k, vs := range respHeaders {
 		for _, v := range vs {
-			buf.WriteString(fmt.Sprintf("%s:%v\r\n", k, v))
+			_, _ = buf.WriteString(fmt.Sprintf("%s:%v\r\n", k, v))
 		}
 	}
-	buf.WriteString("\r\n")
+	_, _ = buf.WriteString("\r\n")
 	return buf.Flush()
 }
