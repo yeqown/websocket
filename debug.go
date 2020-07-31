@@ -8,10 +8,11 @@ import (
 
 var (
 	debugMode = false
-	logger    = log.NewLogger()
+	logger    *log.Logger
 )
 
 func init() {
+	logger, _ = log.NewLogger()
 	logger.SetLogLevel(log.LevelInfo)
 
 	if debugMode {
