@@ -7,15 +7,15 @@ import (
 )
 
 var (
-	debugMode = false
-	logger    *log.Logger
+	_debug = false
+	logger *log.Logger
 )
 
 func init() {
 	logger, _ = log.NewLogger()
 	logger.SetLogLevel(log.LevelInfo)
 
-	if debugMode {
+	if _debug {
 		logger.SetLogLevel(log.LevelDebug)
 	}
 }
@@ -23,24 +23,24 @@ func init() {
 // SetDebug . open debug mode
 func SetDebug(debug bool) {
 	if debug {
-		debugMode = debug
+		_debug = debug
 		logger.SetLogLevel(log.LevelDebug)
 	}
 }
 
-// print []byte into bits into stdout
+// debugPrintEncodedFrame print []byte into bits into stdout
 func debugPrintEncodedFrame(encoded []byte) {
-	if !debugMode {
+	if !_debug {
 		return
 	}
 
 	gotLen := len(encoded)
-	max := (gotLen / 4)
+	max := gotLen / 4
 	s := 0
 
 	// println(gotLen, max)
 	for i := 0; i < max; i++ {
-		s = (i * 4)
+		s = i * 4
 		fmt.Printf("%08b,%08b,%08b,%08b\n", encoded[s], encoded[s+1], encoded[s+2], encoded[s+3])
 		// println(s)
 	}
@@ -54,7 +54,7 @@ func debugPrintEncodedFrame(encoded []byte) {
 }
 
 func debugErrorf(format string, args ...interface{}) {
-	if !debugMode {
+	if !_debug {
 		return
 	}
 
@@ -65,7 +65,8 @@ func formatUint16(v uint16) string {
 	return fmt.Sprintf("%016b", v)
 }
 
-var frameFormat = `Frame{
+func debugPrintFrame(frm *Frame) {
+	var frameFormat = `Frame{
     Fin:				%d,
     RSV1:				%d,
     RSV2:				%d,
@@ -78,7 +79,6 @@ var frameFormat = `Frame{
     Payload: 			%d,
 }`
 
-func debugPrintFrame(frm *Frame) {
 	logger.Debugf(
 		frameFormat,
 		frm.Fin,

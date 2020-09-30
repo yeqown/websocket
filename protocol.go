@@ -383,13 +383,13 @@ func constructControlFrame(opcode OpCode, noMask bool, payload []byte) *Frame {
 	return frm
 }
 
-func constructFrame(opcode OpCode, finnal bool, noMask bool) *Frame {
+func constructFrame(opcode OpCode, final bool, noMask bool) *Frame {
 	var (
 		fin  uint16 = 1
 		mask uint16 = 1
 	)
 
-	if !finnal {
+	if !final {
 		fin = 0
 	}
 

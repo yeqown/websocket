@@ -47,9 +47,9 @@ var (
 	ErrInvalidSchema = errors.New("invalid schema")
 )
 
-// dialWithContext to dail connection with server or client
-// ws-URI = "ws:" "//" host [ ":" port ] path [ "?"
-// wss-URI = "wss:" "//" host [ ":" port ] path [ "?"
+// dialWithContext to dail connection with server or client.
+// wsURL = "ws://host[:port]/path?rawquery"
+// wssURL = "wss://host[:port]/path?rawquery".
 //
 // 0. prepare [schema, headers]
 // 1. build an TCP connection
@@ -104,11 +104,10 @@ func dialWithContext(ctx context.Context, do *options) (*Conn, error) {
 		// true: TLS handshake
 		tlsconn := tls.Client(netconn, do.tlsConfig)
 		netconn = tlsconn
-		err = tlsHandshake(tlsconn, do.tlsConfig)
-	}
-	if err != nil {
-		logger.Errorf("dialWithContext TLS handshake, with tlsConfig=%+v err=%v", do.tlsConfig, err)
-		return nil, err
+		if err = tlsHandshake(tlsconn, do.tlsConfig); err != nil {
+			logger.Errorf("dialWithContext TLS handshake, with tlsConfig=%+v err=%v", do.tlsConfig, err)
+			return nil, err
+		}
 	}
 
 	// handle newConn
@@ -124,7 +123,7 @@ func dialWithContext(ctx context.Context, do *options) (*Conn, error) {
 		logger.Errorf("dialWithContext failed to write Upgrade Request, err=%v", err)
 		return nil, err
 	}
-	conn.bufWR.Flush()
+	_ = conn.bufWR.Flush()
 
 	// handle response
 	resp, err := http.ReadResponse(conn.bufRD, req)
@@ -145,7 +144,7 @@ func dialWithContext(ctx context.Context, do *options) (*Conn, error) {
 }
 
 // shouldKeep to figure out: should client keep current websocket connection
-// related to status code and repsone headers
+// related to status code and response headers
 func shouldKeep(resp *http.Response) (keep bool, err error) {
 	var body []byte
 	if body, err = ioutil.ReadAll(resp.Body); err != nil {

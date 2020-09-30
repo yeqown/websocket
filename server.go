@@ -34,7 +34,7 @@ func newHandshakeError(reason string) HandshakeError {
 	return HandshakeError{Text: "websocket: the client is not using the websocket protocol: " + reason}
 }
 
-// Upgrader . std.HTTP / fasthttp / gin etc
+// Upgrader std.HTTP / fasthttp / gin etc
 type Upgrader struct {
 	CheckOrigin func(req *http.Request) bool
 }
@@ -48,7 +48,7 @@ type Upgrader struct {
 func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(conn *Conn)) error {
 	// check METHOD == GET
 	if req.Method != http.MethodGet {
-		debugErrorf("Upgrader.Upgrade handsahke got method=%s is not GET", req.Method)
+		debugErrorf("Upgrader.Upgrade handshake got method=%s is not GET", req.Method)
 		return ug.returnError(w, http.StatusMethodNotAllowed, newHandshakeError("method not allowed").Error())
 	}
 

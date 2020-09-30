@@ -6,13 +6,18 @@ import (
 )
 
 type options struct {
-	host     string
-	port     string
-	schema   string
-	path     string
+	// host eg. foo.com
+	host string
+	// port eg. 80 or 443
+	port string
+	// schema eg. ws or wss, wss means ws with TLS
+	schema string
+	// path eg. /ws
+	path string
+	// rawquery contains parameters to build a connection
 	rawquery string
 
-	// option fields
+	// tlsConfig with TLS config or not
 	tlsConfig *tls.Config
 }
 
@@ -52,7 +57,13 @@ func parseURL(URL string) (*options, error) {
 	return &do, nil
 }
 
-// WithTLS .
+// WithTLS generate DialOption with tls.Config.
+//
+//		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+//		&tls.Config{
+//			Certificates: []tls.Certificate{cert},
+//		}
+//
 func WithTLS(cfg *tls.Config) DialOption {
 	return func(do *options) {
 		do.tlsConfig = cfg
