@@ -1,164 +1,86 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xl="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="179.5 -717.6343 304.74527 387.5" width="304.74527" height="387.5">
-  <defs>
-    <filter id="Shadow" filterUnits="userSpaceOnUse" x="149.02547" y="-756.3843">
-      <feGaussianBlur in="SourceAlpha" result="blur" stdDeviation="1.308"/>
-      <feOffset in="blur" result="offset" dx="0" dy="2"/>
-      <feFlood flood-color="black" flood-opacity=".5" result="flood"/>
-      <feComposite in="flood" in2="offset" operator="in"/>
-    </filter>
-    <font-face font-family="STHeiti" font-size="10" panose-1="2 1 6 0 4 1 1 1 1 1" units-per-em="1000" underline-position="-133" underline-thickness="20" slope="0" x-height="598" cap-height="787" ascent="860.0006" descent="-139.99939" font-weight="500">
-      <font-face-src>
-        <font-face-name name="STHeiti"/>
-      </font-face-src>
-    </font-face>
-    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-1 -4 10 8" markerWidth="10" markerHeight="8" color="black">
-      <g>
-        <path d="M 8 0 L 0 -3 L 0 3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-      </g>
-    </marker>
-    <font-face font-family="PingFang SC" font-size="7" panose-1="2 11 4 0 0 0 0 0 0 0" units-per-em="1000" underline-position="-150" underline-thickness="58" slope="0" x-height="600" cap-height="860" ascent="1060.0021" descent="-340.0007" font-weight="400">
-      <font-face-src>
-        <font-face-name name="PingFangSC-Regular"/>
-      </font-face-src>
-    </font-face>
-  </defs>
-  <metadata> Produced by OmniGraffle 7.14.1 
-    <dc:date>2020-03-31 02:53:29 +0000</dc:date>
-  </metadata>
-  <g id="websocket_" stroke="none" fill-opacity="1" stroke-opacity="1" stroke-dasharray="none" fill="none">
-    <title>websocket笔记</title>
-    <g id="websocket_: client">
-      <title>client</title>
-      <g id="Graphic_2_shadow" filter="url(#Shadow)">
-        <path d="M 348 -716.1343 L 411 -716.1343 C 418.452 -716.1343 424.5 -708.0703 424.5 -698.1343 C 424.5 -688.1983 418.452 -680.1343 411 -680.1343 L 348 -680.1343 C 340.548 -680.1343 334.5 -688.1983 334.5 -698.1343 C 334.5 -708.0703 340.548 -716.1343 348 -716.1343 Z" fill="white"/>
-        <path d="M 348 -716.1343 L 411 -716.1343 C 418.452 -716.1343 424.5 -708.0703 424.5 -698.1343 C 424.5 -688.1983 418.452 -680.1343 411 -680.1343 L 348 -680.1343 C 340.548 -680.1343 334.5 -688.1983 334.5 -698.1343 C 334.5 -708.0703 340.548 -716.1343 348 -716.1343 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_3_shadow" filter="url(#Shadow)">
-        <rect x="339" y="-643.6343" width="81" height="36" fill="white"/>
-        <path d="M 339 -643.6343 L 420 -643.6343 L 420 -607.6343 L 339 -607.6343 Z M 347.1 -643.6343 L 347.1 -607.6343 M 411.9 -607.6343 L 411.9 -643.6343" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_5_shadow" filter="url(#Shadow)">
-        <path d="M 379.5 -589.1343 L 424.5 -571.1343 L 379.5 -553.1343 L 334.5 -571.1343 Z" fill="white"/>
-        <path d="M 379.5 -589.1343 L 424.5 -571.1343 L 379.5 -553.1343 L 334.5 -571.1343 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_7_shadow" filter="url(#Shadow)">
-        <path d="M 348 -371.63427 L 411 -371.63427 C 418.452 -371.63427 424.5 -363.57027 424.5 -353.63427 C 424.5 -343.69827 418.452 -335.63427 411 -335.63427 L 348 -335.63427 C 340.548 -335.63427 334.5 -343.69827 334.5 -353.63427 C 334.5 -363.57027 340.548 -371.63427 348 -371.63427 Z" fill="white"/>
-        <path d="M 348 -371.63427 L 411 -371.63427 C 418.452 -371.63427 424.5 -363.57027 424.5 -353.63427 C 424.5 -343.69827 418.452 -335.63427 411 -335.63427 L 348 -335.63427 C 340.548 -335.63427 334.5 -343.69827 334.5 -353.63427 C 334.5 -363.57027 340.548 -371.63427 348 -371.63427 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_8_shadow" filter="url(#Shadow)">
-        <path d="M 183 -497.93427 L 264 -505.13427 L 264 -469.13427 L 183 -469.13427 Z" fill="white"/>
-        <path d="M 183 -497.93427 L 264 -505.13427 L 264 -469.13427 L 183 -469.13427 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_9_shadow" filter="url(#Shadow)">
-        <rect x="334.5" y="-505.13427" width="90" height="36" fill="white"/>
-        <rect x="334.5" y="-505.13427" width="90" height="36" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_14_shadow" filter="url(#Shadow)">
-        <path d="M 379.5 -445.63427 L 424.5 -427.63427 L 379.5 -409.63427 L 334.5 -427.63427 Z" fill="white"/>
-        <path d="M 379.5 -445.63427 L 424.5 -427.63427 L 379.5 -409.63427 L 334.5 -427.63427 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_2">
-        <path d="M 348 -716.1343 L 411 -716.1343 C 418.452 -716.1343 424.5 -708.0703 424.5 -698.1343 C 424.5 -688.1983 418.452 -680.1343 411 -680.1343 L 348 -680.1343 C 340.548 -680.1343 334.5 -688.1983 334.5 -698.1343 C 334.5 -708.0703 340.548 -716.1343 348 -716.1343 Z" fill="white"/>
-        <path d="M 348 -716.1343 L 411 -716.1343 C 418.452 -716.1343 424.5 -708.0703 424.5 -698.1343 C 424.5 -688.1983 418.452 -680.1343 411 -680.1343 L 348 -680.1343 C 340.548 -680.1343 334.5 -688.1983 334.5 -698.1343 C 334.5 -708.0703 340.548 -716.1343 348 -716.1343 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(348.5 -703.1343)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="21" y="9">开始</tspan>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="409px" height="440px" viewBox="0 0 409 440" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="background: #FFFFFF;">
+    <title>WebSocket-Go</title>
+    <g id="流程图" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="编组-2" transform="translate(201.000000, 0.000000)">
+            <rect id="矩形" stroke="#979797" fill="#D8D8D8" x="0.5" y="0.5" width="121" height="36" rx="8"></rect>
+            <text id="Begin" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="43" y="23">Begin</tspan>
+            </text>
+        </g>
+        <g id="编组-3" transform="translate(201.000000, 403.000000)">
+            <rect id="矩形备份-2" stroke="#979797" fill="#D8D8D8" x="0.5" y="0.5" width="121" height="36" rx="8"></rect>
+            <text id="End" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="50" y="23">End</tspan>
+            </text>
+        </g>
+        <g id="编组" transform="translate(201.000000, 73.000000)">
+            <rect id="矩形备份" stroke="#979797" fill="#80CAF8" x="0.5" y="0.5" width="121" height="36" rx="8"></rect>
+            <text id="Handshake" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="30" y="23">Handshake</tspan>
+            </text>
+        </g>
+        <path id="直线" d="M261.5,39.5 L261.5,61.5 L265.5,61.5 L261,70.5 L256.5,61.5 L260.5,61.5 L260.5,39.5 L261.5,39.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="直线备份" d="M262.5,112.5 L262.5,134.5 L266.5,134.5 L262,143.5 L257.5,134.5 L261.5,134.5 L261.5,112.5 L262.5,112.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="直线备份-2" d="M262.5,204.5 L262.5,226.5 L266.5,226.5 L262,235.5 L257.5,226.5 L261.5,226.5 L261.5,204.5 L262.5,204.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="直线备份-3" d="M261.5,276.5 L261.5,298.5 L265.5,298.5 L261,307.5 L256.5,298.5 L260.5,298.5 L260.5,276.5 L261.5,276.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="直线备份-4" d="M262.5,369.5 L262.5,391.5 L266.5,391.5 L262,400.5 L257.5,391.5 L261.5,391.5 L261.5,369.5 L262.5,369.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        <g id="编组-5" transform="translate(201.000000, 146.000000)">
+            <g id="菱形" fill="#D8D8D8" stroke="#979797">
+                <path d="M61,0.551880443 L120.818782,28.5 L61,56.4481196 L1.18121779,28.5 L61,0.551880443 Z" id="矩形"></path>
+            </g>
+            <text id="Handshake-Successful" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="30" y="23">Handshake </tspan>
+                <tspan x="30" y="38">Successful</tspan>
+                <tspan x="30" y="53">	?</tspan>
+            </text>
+        </g>
+        <g id="编组-5备份" transform="translate(200.000000, 310.000000)">
+            <g id="菱形" fill="#D8D8D8" stroke="#979797">
+                <path d="M61,0.551880443 L120.818782,28.5 L61,56.4481196 L1.18121779,28.5 L61,0.551880443 Z" id="矩形"></path>
+            </g>
+            <text id="Is-Close?" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="28" y="33">Is Close?</tspan>
+            </text>
+        </g>
+        <g id="编组-4" transform="translate(201.000000, 238.000000)">
+            <rect id="矩形" stroke="#979797" fill="#FFBABA" x="0.5" y="0.5" width="121" height="35"></rect>
+            <text id="Recive" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="42" y="22">Recive</tspan>
+            </text>
+        </g>
+        <g id="编组-4备份" transform="translate(0.000000, 238.000000)">
+            <rect id="矩形" stroke="#979797" fill="#FBC2A3" x="0.5" y="0.5" width="121" height="35"></rect>
+            <text id="Send" font-family="JetBrainsMono-Regular, JetBrains Mono" font-size="12" font-weight="normal" fill="#000000">
+                <tspan x="42" y="22">Send</tspan>
+            </text>
+        </g>
+        <g id="编组-6" transform="translate(327.000000, 255.000000)">
+            <line x1="0.5" y1="83.5" x2="50.5" y2="83.5" id="直线-2" stroke="#979797" stroke-linecap="square"></line>
+            <line x1="50.5" y1="83.5" x2="50.5" y2="0.5" id="直线-3" stroke="#979797" stroke-linecap="square"></line>
+            <path id="直线-4" d="M9,-4 L9,0 L51,0 L51,1 L9,1 L9,5 L0,0.5 L9,-4 Z" fill="#979797" fill-rule="nonzero"></path>
+        </g>
+        <text id="Y" font-family="PingFangSC-Regular, PingFang SC" font-size="12" font-weight="normal" fill="#000000">
+            <tspan x="274" y="220">Y</tspan>
         </text>
-      </g>
-      <g id="Graphic_3">
-        <rect x="339" y="-643.6343" width="81" height="36" fill="white"/>
-        <path d="M 339 -643.6343 L 420 -643.6343 L 420 -607.6343 L 339 -607.6343 Z M 347.1 -643.6343 L 347.1 -607.6343 M 411.9 -607.6343 L 411.9 -643.6343" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(352.1 -630.6343)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="17.4" y="9">握手</tspan>
+        <path id="直线-5" d="M135.5,251.5 L135.5,255.5 L196.5,255.5 L196.5,256.5 L135.5,256.5 L135.5,260.5 L126.5,256 L135.5,251.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        <g id="编组-7" transform="translate(56.000000, 214.000000)">
+            <line x1="0.5" y1="20.8360656" x2="0.5" y2="1.16393443" id="直线-6" stroke="#979797" stroke-linecap="square"></line>
+            <path id="直线-7" d="M192.778571,-3.5 L201.778571,1 L192.778571,5.5 L192.778,1.5 L0.721428571,1.5 L0.221428571,1.5 L0.221428571,0.5 L192.778,0.499 L192.778571,-3.5 Z" fill="#979797" fill-rule="nonzero"></path>
+        </g>
+        <g id="编组-8" transform="translate(267.000000, 174.000000)">
+            <line x1="59.5" y1="0.5" x2="141.5" y2="0.5" id="直线-8" stroke="#979797" stroke-linecap="square"></line>
+            <line x1="141.5" y1="0.5" x2="141.5" y2="211.5" id="直线-9" stroke="#979797" stroke-linecap="square"></line>
+            <path id="直线-10" d="M9,207 L9,211 L142,211 L142,212 L9,212 L9,216 L0,211.5 L9,207 Z" fill="#979797" fill-rule="nonzero"></path>
+        </g>
+        <text id="N" font-family="PingFangSC-Regular, PingFang SC" font-size="12" font-weight="normal" fill="#000000">
+            <tspan x="352" y="165">N</tspan>
         </text>
-      </g>
-      <g id="Line_4">
-        <path d="M 379.5 -680.1343 C 379.5 -680.1343 379.5 -664.3401 379.5 -653.53095" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_5">
-        <path d="M 379.5 -589.1343 L 424.5 -571.1343 L 379.5 -553.1343 L 334.5 -571.1343 Z" fill="white"/>
-        <path d="M 379.5 -589.1343 L 424.5 -571.1343 L 379.5 -553.1343 L 334.5 -571.1343 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(351.65 -576.4943)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="8.75" y="9">握手成功</tspan>
+        <text id="Y" font-family="PingFangSC-Regular, PingFang SC" font-size="12" font-weight="normal" fill="#000000">
+            <tspan x="249" y="385">Y</tspan>
         </text>
-      </g>
-      <g id="Line_6">
-        <path d="M 379.5 -607.6343 C 379.5 -607.6343 379.5 -603.4327 379.5 -599.0342" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_7">
-        <path d="M 348 -371.63427 L 411 -371.63427 C 418.452 -371.63427 424.5 -363.57027 424.5 -353.63427 C 424.5 -343.69827 418.452 -335.63427 411 -335.63427 L 348 -335.63427 C 340.548 -335.63427 334.5 -343.69827 334.5 -353.63427 C 334.5 -363.57027 340.548 -371.63427 348 -371.63427 Z" fill="white"/>
-        <path d="M 348 -371.63427 L 411 -371.63427 C 418.452 -371.63427 424.5 -363.57027 424.5 -353.63427 C 424.5 -343.69827 418.452 -335.63427 411 -335.63427 L 348 -335.63427 C 340.548 -335.63427 334.5 -343.69827 334.5 -353.63427 C 334.5 -363.57027 340.548 -371.63427 348 -371.63427 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(348.5 -358.63427)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="21" y="9">结束</tspan>
+        <text id="N" font-family="PingFangSC-Regular, PingFang SC" font-size="12" font-weight="normal" fill="#000000">
+            <tspan x="352" y="331">N</tspan>
         </text>
-      </g>
-      <g id="Graphic_8">
-        <path d="M 183 -497.93427 L 264 -505.13427 L 264 -469.13427 L 183 -469.13427 Z" fill="white"/>
-        <path d="M 183 -497.93427 L 264 -505.13427 L 264 -469.13427 L 183 -469.13427 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(188 -490.33427)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="15.5" y="9">发送消息</tspan>
-        </text>
-      </g>
-      <g id="Graphic_9">
-        <rect x="334.5" y="-505.13427" width="90" height="36" fill="white"/>
-        <rect x="334.5" y="-505.13427" width="90" height="36" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(339.5 -492.13427)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="20" y="9">接收消息</tspan>
-        </text>
-      </g>
-      <g id="Graphic_14">
-        <path d="M 379.5 -445.63427 L 424.5 -427.63427 L 379.5 -409.63427 L 334.5 -427.63427 Z" fill="white"/>
-        <path d="M 379.5 -445.63427 L 424.5 -427.63427 L 379.5 -409.63427 L 334.5 -427.63427 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(351.65 -432.99427)" fill="black">
-          <tspan font-family="STHeiti" font-size="10" font-weight="500" fill="black" x="8.75" y="9">是否关闭</tspan>
-        </text>
-      </g>
-      <g id="Line_15">
-        <path d="M 379.5 -469.13427 C 379.5 -469.13427 379.5 -461.95466 379.5 -455.5323" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Line_16">
-        <path d="M 379.5 -409.63427 C 379.5 -409.63427 379.5 -392.7981 379.5 -381.53894" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Line_17">
-        <path d="M 424.5 -571.1343 C 424.5 -571.1343 475.3298 -571.4002 475.3298 -571.4002 C 475.3298 -571.4002 476.92553 -353.3151 476.92553 -353.3151 C 476.92553 -353.3151 449.5916 -353.4815 434.3978 -353.574" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Line_18">
-        <path d="M 379.5 -553.1343 C 379.5 -553.1343 379.5 -529.08634 379.5 -515.03333" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Line_19">
-        <path d="M 334.5 -487.13427 C 334.5 -487.13427 293.31113 -487.13427 273.89927 -487.13427" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Line_20">
-        <path d="M 223.5 -501.53427 C 223.5 -501.53427 223.46809 -521.6662 223.46809 -521.6662 C 223.46809 -521.6662 339 -521.6662 339 -521.6662 C 339 -521.6662 357.61334 -521.4982 369.60295 -521.39" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_21">
-        <rect x="467.2453" y="-524.11707" width="17" height="19" fill="white"/>
-        <text transform="translate(472.2453 -519.11707)" fill="black">
-          <tspan font-family="PingFang SC" font-size="7" font-weight="400" fill="black" x="0" y="7">否</tspan>
-        </text>
-      </g>
-      <g id="Graphic_22">
-        <rect x="371" y="-549.5247" width="17" height="19" fill="white"/>
-        <text transform="translate(376 -544.5247)" fill="black">
-          <tspan font-family="PingFang SC" font-size="7" font-weight="400" fill="black" x="0" y="7">是</tspan>
-        </text>
-      </g>
-      <g id="Line_23">
-        <path d="M 424.5 -427.63427 C 424.5 -427.63427 455.0339 -427.71464 455.0339 -427.71464 C 455.0339 -427.71464 454.5851 -487.8896 454.5851 -487.8896 C 454.5851 -487.8896 443.16855 -487.60296 434.401 -487.38284" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
-      <g id="Graphic_24">
-        <rect x="446.31816" y="-466.1414" width="17" height="19" fill="white"/>
-        <text transform="translate(451.31816 -461.1414)" fill="black">
-          <tspan font-family="PingFang SC" font-size="7" font-weight="400" fill="black" x="0" y="7">否</tspan>
-        </text>
-      </g>
-      <g id="Graphic_25">
-        <rect x="371" y="-403.56677" width="17" height="19" fill="white"/>
-        <text transform="translate(376 -398.56677)" fill="black">
-          <tspan font-family="PingFang SC" font-size="7" font-weight="400" fill="black" x="0" y="7">是</tspan>
-        </text>
-      </g>
     </g>
-  </g>
 </svg>

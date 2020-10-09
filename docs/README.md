@@ -1,7 +1,7 @@
-## docs 
+## Docs 
 
-docs includes some document cleared up while i'm reading and coding **WebScoket** protocol. Contents is following:  
+The `docs` part includes some document cleared up while I'm reading and coding **WebScoket** protocol. Contents is following:  
 
-* websocket-protocol process overview, handshake, sending and reading data
-* frame detail and examples
-* library API doc
+* [Websocket Protocol](Websocket-Protocol.md) process overview, handshake, sending and reading data.
+* [Frame](Frame.md) detail and examples.
+* [API](API.md) doc.

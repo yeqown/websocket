@@ -105,7 +105,7 @@ base frame is following:
 
 <img align="center" src="./static/websocket-frame.svg"/>
 
-[READ MORE](./docs/frame.md)
+[READ MORE](docs/Frame.md)
 
 #### How to work
 
