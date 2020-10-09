@@ -14,11 +14,13 @@ package websocket
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 // HandshakeError .
@@ -37,15 +39,28 @@ func newHandshakeError(reason string) HandshakeError {
 // Upgrader std.HTTP / fasthttp / gin etc
 type Upgrader struct {
 	CheckOrigin func(req *http.Request) bool
+
+	Timeout time.Duration
 }
+
+const defaultUpgraderTimeout = 10 * time.Second
 
 // Upgrade handle websocket upgrade request
 //
 // NOTICE: why returnError and hackHandshakeResponse both exists:
 // https://stackoverflow.com/questions/32657603/why-do-i-get-the-error-message-http-response-write-on-hijacked-connection
 //
-// TODO: set and timeout context ?
 func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(conn *Conn)) error {
+	var timeout = defaultUpgraderTimeout
+	if ug.Timeout != 0 {
+		timeout = ug.Timeout
+	}
+
+	// DONE: set context with timeout
+	ctx, cancel := context.WithTimeout(req.Context(), timeout)
+	req = req.WithContext(ctx)
+	defer cancel()
+
 	// check METHOD == GET
 	if req.Method != http.MethodGet {
 		debugErrorf("Upgrader.Upgrade handshake got method=%s is not GET", req.Method)
@@ -93,7 +108,8 @@ func (ug Upgrader) Upgrade(w http.ResponseWriter, req *http.Request, fn func(con
 	respHeaders.Set("Upgrade", "websocket")
 	challengeKey := req.Header.Get("Sec-WebSocket-Key")
 	respHeaders.Set("Sec-WebSocket-Accept", computeAcceptKey(challengeKey))
-	// TODO: support Sec-WebSocket-Protocol header
+	// TODO: support Sec-WebSocket-Protocol header, get header from client request and judge the protocol is available.
+	// respHeaders.Set("Sec-WebSocket-Protocol", "http")
 
 	// finish response and send
 	// FIXED: http.Hijacker could not h.Hijack twice

@@ -28,7 +28,7 @@ var (
 	ErrMaskSet    = errors.New("mask is set")
 )
 
-// ConnState .
+// ConnState denotes the underlying connection's state.
 type ConnState string
 
 const (
@@ -42,37 +42,36 @@ const (
 	Closed ConnState = "closed"
 )
 
-// MessageType .
-// it is reference to frame.opcode
+// MessageType it is reference to frame.opcode
 type MessageType uint8
 
 const (
 	// NoFrame .
 	NoFrame MessageType = 0
 	// TextMessage .
-	TextMessage MessageType = MessageType(opCodeText)
+	TextMessage = MessageType(opCodeText)
 	// BinaryMessage .
-	BinaryMessage MessageType = MessageType(opCodeBinary)
+	BinaryMessage = MessageType(opCodeBinary)
 	// CloseMessage .
-	CloseMessage MessageType = MessageType(opCodeClose)
+	CloseMessage = MessageType(opCodeClose)
 	// PingMessage .
-	PingMessage MessageType = MessageType(opCodePing)
+	PingMessage = MessageType(opCodePing)
 	// PongMessage .
-	PongMessage MessageType = MessageType(opCodePong)
+	PongMessage = MessageType(opCodePong)
 )
 
 // Conn .
 type Conn struct {
-	// conn is underlying TCP connection to send and recv byte stream.
+	// conn is underlying TCP connection to send and receive byte stream.
 	// on client side it's opened by net.Dial(protocol, addr)
-	// on server side it can be got by (http.ResponseWrite).(http.Hijacker).Hijack()
+	// on server side it can be got by (http.ResponseWriter).(http.Hijacker).Hijack()
 	conn net.Conn
 
 	bufRD *bufio.Reader
 	bufWR *bufio.Writer
 
 	// State marks Conn current state, and it is basis of controlling the Conn.
-	// TODO: maybe import an state machine to manage with
+	// unnecessary: maybe import an state machine to manage with
 	State ConnState
 
 	// isServer, true means Conn is working on server side
@@ -81,6 +80,7 @@ type Conn struct {
 	isServer bool
 
 	// TODO: add flag to mark current Conn is working for transferring 'Application Data'
+
 }
 
 // newConn build an websocket.Conn to handle with websocket.Frame
@@ -88,13 +88,10 @@ type Conn struct {
 func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 	c := Conn{
 		conn: netconn,
-
-		bufRD: bufio.NewReaderSize(netconn, 65535), // 65535B = 64KB
-		// bufRD: bufio.NewReader(netconn),         // with default buffer size=4096B Byte = 4KB
-		bufWR: bufio.NewWriter(netconn),
-
-		State: Connecting,
-
+		// bufio.NewReader(netconn) with default buffer size=4096B Byte = 4KB
+		bufRD:    bufio.NewReaderSize(netconn, 65535), // 65535B = 64KB
+		bufWR:    bufio.NewWriter(netconn),
+		State:    Connecting,
 		isServer: isServer,
 	}
 
@@ -151,7 +148,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 			debugErrorf("Conn.readFrame failed to c.read(8) payloadlen with 16bit, err=%v", err)
 			return nil, err
 		}
-		payloadExtendLen = uint64(binary.BigEndian.Uint64(p[:8]))
+		payloadExtendLen = binary.BigEndian.Uint64(p[:8])
 		remaining = payloadExtendLen
 	default:
 		remaining = uint64(frmWithoutPayload.PayloadLen)
@@ -225,9 +222,8 @@ func (c *Conn) readFrame() (*Frame, error) {
 	return frmWithoutPayload, err
 }
 
-// sendDataFrame .
-// send data frame [text, binary]
-// TODO: limit send payload size, into 65535 [maybe auto fragment the payload]
+// sendDataFrame send data frame [text, binary]
+// DONE(@yeqown): limit send payload size, into 65535 [maybe auto fragment the payload]
 func (c *Conn) sendDataFrame(data []byte, opcode OpCode) (err error) {
 	switch opcode {
 	case opCodeText, opCodeBinary:
@@ -235,17 +231,30 @@ func (c *Conn) sendDataFrame(data []byte, opcode OpCode) (err error) {
 		return fmt.Errorf("invalid opcode=%d for data frame", opcode)
 	}
 
+	// need fragment
+	if len(data) > 65535 {
+		frames := fragmentDataFrames(data, c.isServer, opcode)
+		for _, frm := range frames {
+			if err = c.sendFrame(frm); err != nil {
+				debugErrorf("c.send failed to c.sendFrame err=%v", err)
+				return
+			}
+		}
+
+		return
+	}
+
 	frm := constructDataFrame(data, c.isServer, opcode)
 	if err = c.sendFrame(frm); err != nil {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
 		return
 	}
-	return nil
+
+	return
 }
 
 // sendControlFrame .
 // send control frame [ping, pong, close, continuation]
-
 func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
 	frm := constructControlFrame(opcode, c.isServer, payload)
 	frm.setPayload(payload)
@@ -253,9 +262,11 @@ func (c *Conn) sendControlFrame(opcode OpCode, payload []byte) (err error) {
 		debugErrorf("c.send failed to c.sendFrame err=%v", err)
 		return
 	}
+
 	return nil
 }
 
+// sendFrame .
 // FIXED could not send while Conn.State is not "connected"
 func (c *Conn) sendFrame(frm *Frame) (err error) {
 	if !c.Connected() {
@@ -356,7 +367,7 @@ func (c *Conn) pong(pingPayload []byte) (err error) {
 
 // DONE: add close message to close frame
 func (c *Conn) close(closeCode int) (err error) {
-	// FIXME: only do following work when Conn is not recving or sending
+	// FIXME: do following work only when Conn is not receiving or sending
 	// wait other work finishing
 	p := make([]byte, 2, 16)
 	closeErr := &CloseError{Code: closeCode}
@@ -371,7 +382,7 @@ func (c *Conn) close(closeCode int) (err error) {
 
 	if c.conn != nil {
 		// close underlying TCP connection
-		defer c.conn.Close()
+		defer func() { _ = c.conn.Close() }()
 	}
 	// update Conn's State to 'Closed'
 	c.State = Closed

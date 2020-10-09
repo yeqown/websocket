@@ -442,3 +442,51 @@ func Test_Frame_setPayload_over125less65535(t *testing.T) {
 	// assert.Equal(t, frm.PayloadLen, dstFrm.PayloadLen)
 	// assert.Equal(t, frm.PayloadExtendLen, dstFrm.PayloadExtendLen)
 }
+
+func Test_fragmentDataFrames(t *testing.T) {
+	data := make([]byte, 0, 65535*2+20)
+	part1 := strings.Repeat("a", 65535)
+	part2 := strings.Repeat("b", 65535)
+	part3 := strings.Repeat("c", 20)
+
+	data = append(data, part1...)
+	data = append(data, part2...)
+	data = append(data, part3...)
+
+	frames := fragmentDataFrames(data, true, opCodeText)
+
+	assert.Equal(t, 3, len(frames))
+
+	assert.Equal(t, uint16(0), frames[0].Fin)
+	assert.Equal(t, opCodeText, frames[0].OpCode)
+	assert.Equal(t, []byte(part1), frames[0].Payload)
+
+	assert.Equal(t, uint16(0), frames[1].Fin)
+	assert.Equal(t, opCodeContinuation, frames[1].OpCode)
+	assert.Equal(t, []byte(part2), frames[1].Payload)
+
+	assert.Equal(t, uint16(1), frames[2].Fin)
+	assert.Equal(t, opCodeContinuation, frames[2].OpCode)
+	assert.Equal(t, []byte(part3), frames[2].Payload)
+}
+
+func Test_fragmentDataFrames_times(t *testing.T) {
+	data := make([]byte, 0, 65535*2)
+	part1 := strings.Repeat("a", 65535)
+	part2 := strings.Repeat("b", 65535)
+
+	data = append(data, part1...)
+	data = append(data, part2...)
+
+	frames := fragmentDataFrames(data, true, opCodeText)
+
+	assert.Equal(t, 2, len(frames))
+
+	assert.Equal(t, uint16(0), frames[0].Fin)
+	assert.Equal(t, opCodeText, frames[0].OpCode)
+	assert.Equal(t, []byte(part1), frames[0].Payload)
+
+	assert.Equal(t, uint16(1), frames[1].Fin)
+	assert.Equal(t, opCodeContinuation, frames[1].OpCode)
+	assert.Equal(t, []byte(part2), frames[1].Payload)
+}

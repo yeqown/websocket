@@ -87,16 +87,16 @@ var (
 	ErrInvalidFrame = &CloseError{Code: CloseProtocolError, Text: "invalid frame: "}
 )
 
-// OpCode . 4bit
+// OpCode (4bit) it decides how to parse payload data.
 type OpCode uint16
 
 const (
-	opCodeContinuation OpCode = 0  // %x0 denotes a continuation frame .
-	opCodeText         OpCode = 1  // *  %x1 denotes a text frame
-	opCodeBinary       OpCode = 2  // *  %x2 denotes a binary frame
-	opCodeClose        OpCode = 8  // *  %x8 denotes a connection close
-	opCodePing         OpCode = 9  // *  %x9 denotes a ping
-	opCodePong         OpCode = 10 // *  %xA denotes a pong
+	opCodeContinuation OpCode = 0  // 0x0 denotes a continuation frame .
+	opCodeText         OpCode = 1  // 0x1 denotes a text frame
+	opCodeBinary       OpCode = 2  // 0x2 denotes a binary frame
+	opCodeClose        OpCode = 8  // 0x8 denotes a connection close
+	opCodePing         OpCode = 9  // 0x9 denotes a ping
+	opCodePong         OpCode = 10 // 0xA denotes a pong
 	// opCodeReserved            = 3 - 7   // *  %x3-7 are reserved for further non-control frames
 	// opCode                    = 11 - 16 // *  %xB-F are reserved for further control frames
 )
@@ -163,7 +163,7 @@ type Frame struct {
 
 func (frm *Frame) autoCalcPayloadLen() {
 	var (
-		payloadLen       uint64 = uint64(len(frm.Payload))
+		payloadLen       = uint64(len(frm.Payload))
 		payloadExtendLen uint64
 	)
 	// auto set payload len and payload extended length
@@ -185,7 +185,7 @@ func (frm *Frame) autoCalcPayloadLen() {
 	frm.PayloadExtendLen = payloadExtendLen
 }
 
-// ... generate random masking-key
+// genMaskingKey generate random masking-key
 func (frm *Frame) genMaskingKey() {
 	frm.MaskingKey = rand.Uint32()
 }
@@ -363,9 +363,35 @@ func parseFrameHeader(header []byte) *Frame {
 	return frm
 }
 
+// fragmentDataFrames if data is too large so that could not be send in one frame.
+// TODO: opcode should opCodeContinuation and opCodeText
+func fragmentDataFrames(data []byte, noMask bool, opcode OpCode) []*Frame {
+	s := len(data)
+	start, end, n := 0, 0, s/65535
+
+	frames := make([]*Frame, 0, n+1)
+	for i := 1; i <= n; i++ {
+		start, end = (i-1)*65535, i*65535
+		frames = append(frames, constructDataFrame(data[start:end], noMask, opCodeContinuation))
+	}
+
+	if end < s {
+		frames = append(frames, constructDataFrame(data[end:], noMask, opCodeContinuation))
+	}
+
+	frames[0].OpCode = opcode
+	// DONE: final frame should be FIN
+	frames[len(frames)-1].Fin = 1
+
+	return frames
+}
+
+// constructDataFrame payload length is less than 65535
 // FIXED: default opCodeText, need support binary
 func constructDataFrame(payload []byte, noMask bool, opcode OpCode) *Frame {
-	frm := constructFrame(opcode, true, noMask)
+	// if opcode is opCodeContinuation, means this frame is not the final frame
+	final := opcode != opCodeContinuation
+	frm := constructFrame(opcode, final, noMask)
 	// logger.Debugf("init: %+v", frm)
 	frm.setPayload(payload)
 	// logger.Debugf("with payload: %+v", frm)
