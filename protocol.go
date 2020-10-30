@@ -253,11 +253,11 @@ func (frm *Frame) maskPayload() {
 // 	}
 // }
 
-// to mark current frame is used as control or data
-func (frm *Frame) isControl() bool {
-	return frm.OpCode == opCodePing || frm.OpCode == opCodePong ||
-		frm.OpCode == opCodeClose || frm.OpCode == opCodeContinuation
-}
+//// to mark current frame is used as control or data
+//func (frm *Frame) isControl() bool {
+//	return frm.OpCode == opCodePing || frm.OpCode == opCodePong ||
+//		frm.OpCode == opCodeClose || frm.OpCode == opCodeContinuation
+//}
 
 // isFinal .
 func (frm *Frame) isFinal() bool {

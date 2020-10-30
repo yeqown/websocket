@@ -141,7 +141,7 @@ func Test_Conn_PingPong(t *testing.T) {
 	conn := mockConn(buf)
 
 	// server send ping
-	if err := conn.ping(); err != nil {
+	if err := conn.Ping(); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -157,7 +157,7 @@ func Test_Conn_PingPong(t *testing.T) {
 	assert.Equal(t, pingFrm.Fin, uint16(1))
 	assert.GreaterOrEqual(t, pingFrm.PayloadLen, uint16(0))
 
-	if err := conn.handlePing(pingFrm); err != nil {
+	if err := conn.replyPing(pingFrm); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -173,10 +173,24 @@ func Test_Conn_PingPong(t *testing.T) {
 	assert.Equal(t, pongFrm.Fin, uint16(1))
 	assert.GreaterOrEqual(t, pongFrm.PayloadLen, uint16(0))
 	assert.Equal(t, pongFrm.Payload, pingFrm.Payload)
-	if err := conn.handlePong(pingFrm); err != nil {
+	if err := conn.replyPong(pingFrm); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
+}
+
+func Test_Conn_PongHandler(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	pongHandlerCalledCnt := 0
+	conn.SetPongHandler(func(s string) {
+		pongHandlerCalledCnt++
+	})
+
+	pongFrm := constructControlFrame(opCodePing, true, []byte("pingping"))
+	err := conn.replyPong(pongFrm)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, pongHandlerCalledCnt)
 }
 
 func Test_Conn_close(t *testing.T) {

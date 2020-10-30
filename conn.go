@@ -81,6 +81,8 @@ type Conn struct {
 
 	// TODO: add flag to mark current Conn is working for transferring 'Application Data'
 
+	// pongHandler work for client-side or server-side notify.
+	pongHandler func(payload string)
 }
 
 // newConn build an websocket.Conn to handle with websocket.Frame
@@ -212,9 +214,9 @@ func (c *Conn) readFrame() (*Frame, error) {
 		// DONE: support fragment
 		// DONE: support binary data format
 	case opCodePing:
-		err = c.handlePing(frmWithoutPayload)
+		err = c.replyPing(frmWithoutPayload)
 	case opCodePong:
-		err = c.handlePong(frmWithoutPayload)
+		err = c.replyPong(frmWithoutPayload)
 	case opCodeClose:
 		err = c.handleClose(frmWithoutPayload)
 	}
@@ -325,17 +327,6 @@ func (c *Conn) SendBinary(r io.Reader) (err error) {
 	return c.sendDataFrame(payload, opCodeBinary)
 }
 
-// frame MUST contains 125 Byte or less payload
-func (c *Conn) handlePing(frm *Frame) (err error) {
-	return c.pong(frm.Payload)
-}
-
-// frame MUST contains same payload with PING frame payload
-func (c *Conn) handlePong(frm *Frame) (err error) {
-	// if recv pong frame, do nothing?
-	return nil
-}
-
 // handle close frame
 // to READ close code and text info
 func (c *Conn) handleClose(frm *Frame) error {
@@ -355,9 +346,15 @@ func (c *Conn) handleClose(frm *Frame) error {
 	return err
 }
 
-// ping .
-func (c *Conn) ping() (err error) {
+// Ping conn send a ping packet to another side.
+func (c *Conn) Ping() (err error) {
 	return c.sendControlFrame(opCodePing, []byte("ping"))
+}
+
+// replyPing work for Conn to reply ping packet. frame MUST contains 125 Byte or-
+// less payload.
+func (c *Conn) replyPing(frm *Frame) (err error) {
+	return c.pong(frm.Payload)
 }
 
 // pong .
@@ -365,6 +362,30 @@ func (c *Conn) pong(pingPayload []byte) (err error) {
 	return c.sendControlFrame(opCodePong, pingPayload)
 }
 
+// replyPong frame MUST contains same payload with PING frame payload
+func (c *Conn) replyPong(frm *Frame) (err error) {
+	// if receive pong frame, try to call pongHandler
+	if c.pongHandler != nil {
+		c.pongHandler(string(frm.Payload))
+	}
+
+	return nil
+}
+
+// SetPongHandler handler would be called while the Conn
+func (c *Conn) SetPongHandler(handler func(s string)) {
+	c.pongHandler = handler
+}
+
+// Close .
+func (c *Conn) Close() {
+	c.State = Closing
+	if err := c.close(CloseAbnormalClosure); err != nil {
+		debugErrorf("Conn.Close failed to close, err=%v", err)
+	}
+}
+
+// close ...
 // DONE: add close message to close frame
 func (c *Conn) close(closeCode int) (err error) {
 	// FIXME: do following work only when Conn is not receiving or sending
@@ -387,14 +408,6 @@ func (c *Conn) close(closeCode int) (err error) {
 	// update Conn's State to 'Closed'
 	c.State = Closed
 	return nil
-}
-
-// Close .
-func (c *Conn) Close() {
-	c.State = Closing
-	if err := c.close(CloseAbnormalClosure); err != nil {
-		debugErrorf("Conn.Close failed to close, err=%v", err)
-	}
 }
 
 // Connected .
