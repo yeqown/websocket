@@ -1,0 +1,35 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/yeqown/websocket
+Benchmark_encodeFrameTo-4   	47476513	        24.6 ns/op
+Benchmark_encodeFrameTo-4   	42138008	        41.7 ns/op
+Benchmark_encodeFrameTo-4   	51254150	        21.1 ns/op
+Benchmark_encodeFrameTo-4   	58348670	        20.9 ns/op
+Benchmark_encodeFrameTo-4   	50995783	        23.2 ns/op
+Benchmark_encodeFrameTo-4   	54278478	        21.1 ns/op
+Benchmark_encodeFrameTo-4   	58028119	        21.2 ns/op
+Benchmark_encodeFrameTo-4   	49285860	        21.3 ns/op
+Benchmark_encodeFrameTo-4   	55740422	        21.2 ns/op
+Benchmark_encodeFrameTo-4   	52492232	        21.0 ns/op
+Benchmark_encodeFrameTo-4   	55562962	        21.7 ns/op
+Benchmark_encodeFrameTo-4   	45730713	        31.8 ns/op
+Benchmark_encodeFrameTo-4   	30015274	        55.8 ns/op
+Benchmark_encodeFrameTo-4   	30696867	        33.1 ns/op
+Benchmark_encodeFrameTo-4   	41682981	        36.8 ns/op
+Benchmark_encodeFrameTo-4   	30709658	        41.0 ns/op
+Benchmark_encodeFrameTo-4   	32833718	        47.0 ns/op
+Benchmark_encodeFrameTo-4   	41836389	        30.8 ns/op
+Benchmark_encodeFrameTo-4   	34840177	        32.6 ns/op
+Benchmark_encodeFrameTo-4   	51517981	        23.1 ns/op
+Benchmark_encodeFrameTo-4   	50934801	        27.2 ns/op
+Benchmark_encodeFrameTo-4   	46432670	        25.0 ns/op
+Benchmark_encodeFrameTo-4   	45373636	        23.3 ns/op
+Benchmark_encodeFrameTo-4   	56526907	        22.0 ns/op
+Benchmark_encodeFrameTo-4   	56650801	        28.1 ns/op
+Benchmark_encodeFrameTo-4   	50255155	        24.7 ns/op
+Benchmark_encodeFrameTo-4   	47956780	        29.7 ns/op
+Benchmark_encodeFrameTo-4   	51602376	        22.2 ns/op
+Benchmark_encodeFrameTo-4   	57533500	        22.1 ns/op
+Benchmark_encodeFrameTo-4   	58419278	        21.3 ns/op
+PASS
+ok  	github.com/yeqown/websocket	42.902s
