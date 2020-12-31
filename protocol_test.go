@@ -30,7 +30,7 @@ func mockFrame(payload []byte) *Frame {
 		Mask:             1,   // uint8  1 bit
 		PayloadLen:       0,   // uint8  7 bits
 		PayloadExtendLen: 0,   // uint64 64 bits
-		MaskingKey:       123, // uint64 32 bits
+		MaskingKey:       0,   // uint64 32 bits
 		Payload:          nil, // []byte no limit by RFC6455
 	}
 

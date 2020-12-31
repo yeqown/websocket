@@ -158,7 +158,7 @@ func Test_Conn_PingPong(t *testing.T) {
 	assert.Equal(t, pingFrm.Fin, uint16(1))
 	assert.GreaterOrEqual(t, pingFrm.PayloadLen, uint16(0))
 
-	if err := conn.replyPing(pingFrm); err != nil {
+	if err = conn.replyPing(pingFrm); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -173,8 +173,9 @@ func Test_Conn_PingPong(t *testing.T) {
 	assert.Equal(t, pongFrm.OpCode, opCodePong)
 	assert.Equal(t, pongFrm.Fin, uint16(1))
 	assert.GreaterOrEqual(t, pongFrm.PayloadLen, uint16(0))
+	pongFrm.maskPayload()
 	assert.Equal(t, pongFrm.Payload, pingFrm.Payload)
-	if err := conn.replyPong(pingFrm); err != nil {
+	if err = conn.replyPong(pingFrm); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}

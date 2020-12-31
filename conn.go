@@ -175,7 +175,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 		// if frame has a MaskingKey, so there are 32 bits to read.
 		p, err = c.read(4)
 		if err != nil {
-			debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
+			debugErrorf("Conn.readFrame failed to c.read(mask), err=%v", err)
 			return nil, err
 		}
 		frmWithoutPayload.MaskingKey = binary.BigEndian.Uint32(p)
