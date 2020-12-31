@@ -122,8 +122,8 @@ func (c *Conn) read(n int) (p []byte, err error) {
 		err = ErrUnexpectedEOF
 		return nil, err
 	}
-	_, _ = c.bufRD.Discard(n)
-	return p, nil
+	_, _ = c.bufRD.Discard(len(p))
+	return p, err
 }
 
 func (c *Conn) readFrame() (*Frame, error) {
