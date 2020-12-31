@@ -127,7 +127,7 @@ _encodeFrameTo-4  29.7ns ±11%  26.9ns ±75%  -9.36%  (p=0.008 n=24+29)
 
 #### DIFF
 
-```go
+```diff
 // setPayload . automatic mask or unmask payload data
 func (frm *Frame) setPayload(payload []byte) *Frame {
 -	frm.Payload = make([]byte, len(payload))
