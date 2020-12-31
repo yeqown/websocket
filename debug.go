@@ -66,6 +66,10 @@ func formatUint16(v uint16) string {
 }
 
 func debugPrintFrame(frm *Frame) {
+	if !_debug {
+		return
+	}
+
 	var frameFormat = `Frame{
     Fin:				%d,
     RSV1:				%d,

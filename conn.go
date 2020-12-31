@@ -140,7 +140,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 
 	// parse frame header
 	frmWithoutPayload := parseFrameHeader(p)
-	logger.Debugf("Conn.readFrame got frmWithoutPayload=%+v", frmWithoutPayload)
+	//logger.Debugf("Conn.readFrame got frmWithoutPayload=%+v", frmWithoutPayload)
 
 	var (
 		payloadExtendLen uint64 // this could be non exist
@@ -199,7 +199,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 		payload = make([]byte, 0, remaining)
 	)
 
-	logger.Debugf("Conn.readFrame c.read(%d) into payload data", remaining)
+	//logger.Debugf("Conn.readFrame c.read(%d) into payload data", remaining)
 	for remaining > _FragmentLimit {
 		// true: bufio.Reader can read _FragmentLimit bytes data at most once,
 		// since read bufSize = _FragmentLimit
