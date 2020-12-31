@@ -203,7 +203,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 	for remaining > _FragmentLimit {
 		// true: bufio.Reader can read _FragmentLimit bytes data at most once,
 		// since read bufSize = _FragmentLimit
-		p = make([]byte, 0, _FragmentLimit)
+		// p = make([]byte, 0, _FragmentLimit)
 		p, err = c.read(_FragmentLimit)
 		if err != nil {
 			debugErrorf("Conn.readFrame failed to c.read(payload), err=%v", err)

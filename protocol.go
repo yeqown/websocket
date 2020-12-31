@@ -199,12 +199,21 @@ func (frm *Frame) genMaskingKey() {
 
 // setPayload . automatic mask or unmask payload data
 func (frm *Frame) setPayload(payload []byte) *Frame {
-	frm.Payload = make([]byte, len(payload))
-	copy(frm.Payload, payload)
-	if len(payload) > 256 {
-		logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
-	} else {
-		logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+	//frm.Payload = make([]byte, len(payload))
+	//copy(frm.Payload, payload)
+	//if len(payload) > 256 {
+	//	logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
+	//} else {
+	//	logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+	//}
+
+	frm.Payload = payload
+	if _debug {
+		if len(payload) > 256 {
+			logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
+		} else {
+			logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+		}
 	}
 
 	if frm.Mask == 1 {

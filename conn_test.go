@@ -240,3 +240,48 @@ func Test_Conn_sendDataFrame(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func Benchmark_Conn_SendAndRead_LessThan126(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte(strings.Repeat("s", 125))
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		err = conn.sendFrame(frm)
+		assert.Nil(b, err)
+		_, err = conn.readFrame()
+		assert.Nil(b, err)
+	}
+}
+
+func Benchmark_Conn_SendAndRead_126To65535(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte(strings.Repeat("s", 65535))
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		err = conn.sendFrame(frm)
+		assert.Nil(b, err)
+		_, err = conn.readFrame()
+		assert.Nil(b, err)
+	}
+}
+
+func Benchmark_Conn_SendAndRead_BiggerThan65535(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte(strings.Repeat("s", 65535*2))
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		err = conn.sendFrame(frm)
+		assert.Nil(b, err)
+		_, err = conn.readFrame()
+		assert.Nil(b, err)
+	}
+}

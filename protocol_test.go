@@ -521,3 +521,31 @@ func Benchmark_encodeFrameTo(b *testing.B) {
 		_ = byts
 	}
 }
+
+func Benchmark_Frame_SetPayload_less126(b *testing.B) {
+	payload := []byte(strings.Repeat("s", 125))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		_ = frm
+	}
+}
+
+func Benchmark_Frame_SetPayload_65535(b *testing.B) {
+	payload := []byte(strings.Repeat("s", 65535))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		_ = frm
+	}
+}
+
+func Benchmark_Frame_SetPayload_more65535(b *testing.B) {
+	payload := []byte(strings.Repeat("s", 65535*2))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		_ = frm
+	}
+}

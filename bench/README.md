@@ -122,3 +122,47 @@ $ benchstat encodeFrameTo.old encodeFrameTo.new
 name              old time/op  new time/op  delta
 _encodeFrameTo-4  29.7ns ±11%  26.9ns ±75%  -9.36%  (p=0.008 n=24+29)
 ```
+
+### 2 setPayload
+
+#### DIFF
+
+```go
+// setPayload . automatic mask or unmask payload data
+func (frm *Frame) setPayload(payload []byte) *Frame {
+-	frm.Payload = make([]byte, len(payload))
+-	copy(frm.Payload, payload)
+-	if len(payload) > 256 {
+-		logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
+-	} else {
+-		logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+-	}
+	
++   frm.Payload = payload
++   if _debug {
++       if len(payload) > 256 {
++           logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
++       } else {
++           logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
++       }
++   }
+	
+	if frm.Mask == 1 {
+		// true: if mask has been set, then calc masking-key with payload
+		frm.maskPayload()
+	}
+
+	frm.autoCalcPayloadLen()
+	return frm
+}
+```
+
+#### BENCH CMP
+
+```shell
+$ benchstat bench/setPayload.old bench/setPayload.new
+name                           old time/op  new time/op  delta
+_Frame_SetPayload_less126-4    3.42µs ±39%  0.22µs ±21%  -93.49%  (p=0.000 n=27+29)
+_Frame_SetPayload_65535-4      92.2µs ±23%  82.3µs ±24%  -10.72%  (p=0.000 n=26+28)
+_Frame_SetPayload_more65535-4   172µs ± 1%   159µs ±14%   -7.91%  (p=0.000 n=29+28)
+```
