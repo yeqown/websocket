@@ -30,7 +30,7 @@ func mockFrame(payload []byte) *Frame {
 		Mask:             1,   // uint8  1 bit
 		PayloadLen:       0,   // uint8  7 bits
 		PayloadExtendLen: 0,   // uint64 64 bits
-		MaskingKey:       0,   // uint64 32 bits
+		MaskingKey:       123, // uint64 32 bits
 		Payload:          nil, // []byte no limit by RFC6455
 	}
 
@@ -131,7 +131,7 @@ func decodeToFrame(buf []byte) (*Frame, error) {
 		cur += 2
 	case 127:
 		// has 64bit + 32bit = 12B
-		payloadExtendLen = uint64(binary.BigEndian.Uint64(buf[cur : cur+8]))
+		payloadExtendLen = binary.BigEndian.Uint64(buf[cur : cur+8])
 		cur += 8
 	}
 	frm.PayloadExtendLen = payloadExtendLen
@@ -142,17 +142,19 @@ func decodeToFrame(buf []byte) (*Frame, error) {
 		cur += 4
 	}
 
-	var payloadlength uint64 = uint64(frm.PayloadLen)
+	var payloadLen = uint64(frm.PayloadLen)
 	if frm.PayloadExtendLen != 0 {
-		payloadlength = frm.PayloadExtendLen
+		payloadLen = frm.PayloadExtendLen
 	}
-	frm.Payload = buf[cur : cur+payloadlength]
+	frm.Payload = buf[cur : cur+payloadLen]
 
 	return frm, nil
 }
 
 func Test_EncodeFrame_Decode(t *testing.T) {
-	src := mockFrame(nil)
+	SetDebug(true)
+
+	src := mockFrame([]byte("hello"))
 	buf := encodeFrameTo(src)
 	debugPrintEncodedFrame(buf)
 
@@ -515,7 +517,7 @@ func Benchmark_encodeFrameTo(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		//byts := encodeFrameTo(frame)
-		byts := encodeFrameToV2(frame)
+		byts := encodeFrameTo(frame)
 		_ = byts
 	}
 }

@@ -28,6 +28,10 @@ var (
 	ErrMaskSet    = errors.New("mask is set")
 )
 
+const (
+	_FragmentLimit = 65535 // the size to fragment frame
+)
+
 // ConnState denotes the underlying connection's state.
 type ConnState string
 
@@ -90,8 +94,10 @@ type Conn struct {
 func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 	c := Conn{
 		conn: netconn,
+		// bufio.NewReader(netconn) with default buffer size=4096B Byte = 4KB,
+		// but here specifies _FragmentLimit Bytes = 64KB.
+		bufRD: bufio.NewReaderSize(netconn, _FragmentLimit),
 		// bufio.NewReader(netconn) with default buffer size=4096B Byte = 4KB
-		bufRD:    bufio.NewReaderSize(netconn, 65535), // 65535B = 64KB
 		bufWR:    bufio.NewWriter(netconn),
 		State:    Connecting,
 		isServer: isServer,
@@ -102,14 +108,22 @@ func newConn(netconn net.Conn, isServer bool) (*Conn, error) {
 
 // read n bytes from conn read buffer
 // inspired by gorilla/websocket
-func (c *Conn) read(n int) ([]byte, error) {
-	p, err := c.bufRD.Peek(n)
+func (c *Conn) read(n int) (p []byte, err error) {
+	//p = make([]byte, n)
+	//actual := 0
+	//actual, err = c.bufRD.Read(p)
+	//if err == io.EOF {
+	//	err = ErrUnexpectedEOF
+	//	return nil, err
+	//}
+	//return p[:actual], err
+	p, err = c.bufRD.Peek(n)
 	if err == io.EOF {
 		err = ErrUnexpectedEOF
 		return nil, err
 	}
-	_, _ = c.bufRD.Discard(len(p))
-	return p, err
+	_, _ = c.bufRD.Discard(n)
+	return p, nil
 }
 
 func (c *Conn) readFrame() (*Frame, error) {
@@ -138,7 +152,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 		// has 16bit + 32bit = 6B
 		p, err = c.read(2)
 		if err != nil {
-			debugErrorf("Conn.readFrame failed to c.read(2) payloadlen with 16bit, err=%v", err)
+			debugErrorf("Conn.readFrame failed to c.read(2) payload's len with 16bit, err=%v", err)
 			return nil, err
 		}
 		payloadExtendLen = uint64(binary.BigEndian.Uint16(p[:2]))
@@ -147,7 +161,7 @@ func (c *Conn) readFrame() (*Frame, error) {
 		// has 64bit + 32bit = 12B
 		p, err = c.read(8)
 		if err != nil {
-			debugErrorf("Conn.readFrame failed to c.read(8) payloadlen with 16bit, err=%v", err)
+			debugErrorf("Conn.readFrame failed to c.read(8) payload's len with 16bit, err=%v", err)
 			return nil, err
 		}
 		payloadExtendLen = binary.BigEndian.Uint64(p[:8])
@@ -157,9 +171,8 @@ func (c *Conn) readFrame() (*Frame, error) {
 	}
 	frmWithoutPayload.PayloadExtendLen = payloadExtendLen
 
-	// get masking key
 	if frmWithoutPayload.Mask == 1 {
-		// only 32bit masking key to read
+		// if frame has a MaskingKey, so there are 32 bits to read.
 		p, err = c.read(4)
 		if err != nil {
 			debugErrorf("Conn.readFrame failed to c.read(header), err=%v", err)
@@ -169,14 +182,14 @@ func (c *Conn) readFrame() (*Frame, error) {
 	}
 
 	// valid in common rules
-	if err := frmWithoutPayload.valid(); err != nil {
+	if err = frmWithoutPayload.valid(); err != nil {
 		debugErrorf("Conn.readFrame is not valid(frm.valid) in common rules, err=%v", err)
-		c.close(CloseProtocolError)
+		_ = c.close(CloseProtocolError)
 		return nil, err
 	}
 
 	// valid in Conn rules
-	if err := c.validFrame(frmWithoutPayload); err != nil {
+	if err = c.validFrame(frmWithoutPayload); err != nil {
 		debugErrorf("Conn.readFrame is not valid(conn.validFrame) for Conn rules, err=%v", err)
 		return nil, err
 	}
@@ -187,15 +200,17 @@ func (c *Conn) readFrame() (*Frame, error) {
 	)
 
 	logger.Debugf("Conn.readFrame c.read(%d) into payload data", remaining)
-	for remaining > 65535 {
-		// true: bufio.Reader can read 65535 byte as most at once
-		p, err := c.read(65535)
+	for remaining > _FragmentLimit {
+		// true: bufio.Reader can read _FragmentLimit bytes data at most once,
+		// since read bufSize = _FragmentLimit
+		p = make([]byte, 0, _FragmentLimit)
+		p, err = c.read(_FragmentLimit)
 		if err != nil {
 			debugErrorf("Conn.readFrame failed to c.read(payload), err=%v", err)
 			return nil, err
 		}
 		payload = append(payload, p...)
-		remaining -= 65535
+		remaining -= _FragmentLimit
 	}
 
 	// less part to read

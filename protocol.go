@@ -279,6 +279,7 @@ func (frm *Frame) valid() error {
 	// return ErrInvalidFrame
 	return nil
 }
+
 func calcBufLen(frm *Frame) (bufLen int) {
 	bufLen = 2
 
@@ -295,6 +296,7 @@ func calcBufLen(frm *Frame) (bufLen int) {
 		bufLen += 4
 	}
 
+	bufLen += len(frm.Payload)
 	return
 }
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func mockConn(rw io.ReadWriter) *Conn {
@@ -218,6 +219,7 @@ func Test_Conn_close(t *testing.T) {
 		assert.Equal(t, closeErr.Code, closeErr2.Code)
 		assert.Equal(t, closeErr.Error(), closeErr2.Error())
 	}
+	require.NotNil(t, frm)
 
 	assert.Equal(t, frm.OpCode, opCodeClose)
 	assert.Equal(t, frm.Fin, uint16(1))
