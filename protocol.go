@@ -199,13 +199,14 @@ func (frm *Frame) genMaskingKey() {
 
 // setPayload . automatic mask or unmask payload data
 func (frm *Frame) setPayload(payload []byte) *Frame {
-	frm.Payload = make([]byte, len(payload))
-	copy(frm.Payload, payload)
-	if len(payload) > 256 {
-		logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
-	} else {
-		logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
-	}
+	frm.Payload = payload
+	//if _debug {
+	//	if len(payload) > 256 {
+	//		logger.Debugf("Frame.setPayload got frm.Payload over 256, so ignore to display")
+	//	} else {
+	//		logger.Debugf("Frame.setPayload got frm.Payload=%v", frm.Payload)
+	//	}
+	//}
 
 	if frm.Mask == 1 {
 		// true: if mask has been set, then calc masking-key with payload
@@ -280,55 +281,65 @@ func (frm *Frame) valid() error {
 	return nil
 }
 
-// encodeFrameTo .
-func encodeFrameTo(frm *Frame) []byte {
-	buf := make([]byte, 2, minFrameHeaderSize+8)
-
-	var (
-		part1 uint16 // from FIN to PayloadLen
-	)
-
-	// should move autoCalcPayloadLen into another timing of process ?
-	// frm.autoCalcPayloadLen()
-
-	part1 |= frm.Fin << finOffset
-	// logger.Debugf("before part1=%s, fmr.Fin=%s, after op=%s", formatUint16(part1), formatUint16(frm.Fin<<finOffset), formatUint16(part1))
-	part1 |= frm.RSV1 << rsv1Offset
-	// logger.Debugf("before part1=%s, fmr.RSV1=%s, after op=%s", formatUint16(part1), formatUint16(frm.RSV1<<rsv1Offset), formatUint16(part1))
-	part1 |= frm.RSV2 << rsv2Offset
-	part1 |= frm.RSV3 << rsv3Offset
-	part1 |= uint16(frm.OpCode) << opcodeOffset
-	// logger.Debugf("before part1=%s, fmr.OpCode=%s, after op=%s", formatUint16(part1), formatUint16((uint16(frm.OpCode) << opcodeOffset)), formatUint16(part1))
-	part1 |= frm.Mask << maskOffset
-	part1 |= frm.PayloadLen << payloadLenOffset
-
-	// start from 0th byte
-	// fill part1 into 2 byte
-	binary.BigEndian.PutUint16(buf[:2], part1)
+func calcBufLen(frm *Frame) (bufLen int) {
+	bufLen = 2
 
 	// FIXED: fill payloadExtendLen into 8 byte
 	switch frm.PayloadLen {
 	case 126:
-		payloadExtendBuf := make([]byte, 2)
-		binary.BigEndian.PutUint16(payloadExtendBuf[:2], uint16(frm.PayloadExtendLen))
-		buf = append(buf, payloadExtendBuf...)
+		bufLen += 2
 	case 127:
-		payloadExtendBuf := make([]byte, 8)
-		binary.BigEndian.PutUint64(payloadExtendBuf[:8], frm.PayloadExtendLen)
-		buf = append(buf, payloadExtendBuf...)
+		bufLen += 8
 	}
 
 	// FIXED: if not mask, then no set masking key
 	if frm.Mask == 1 {
-		// fill fmtMaskingKey into 4 byte
-		maskingKeyBuf := make([]byte, 4)
-		binary.BigEndian.PutUint32(maskingKeyBuf[:4], frm.MaskingKey)
-		buf = append(buf, maskingKeyBuf...)
+		bufLen += 4
 	}
 
-	// header done, start writing body
-	buf = append(buf, frm.Payload...)
+	bufLen += len(frm.Payload)
+	return
+}
 
+// encodeFrameTo .
+func encodeFrameTo(frm *Frame) []byte {
+	var (
+		part1 uint16 // from FIN to PayloadLen
+	)
+
+	part1 |= frm.Fin << finOffset
+	part1 |= frm.RSV1 << rsv1Offset
+	part1 |= frm.RSV2 << rsv2Offset
+	part1 |= frm.RSV3 << rsv3Offset
+	part1 |= uint16(frm.OpCode) << opcodeOffset
+	part1 |= frm.Mask << maskOffset
+	part1 |= frm.PayloadLen << payloadLenOffset
+
+	// write into buf
+	var (
+		ptr = 0
+		buf = make([]byte, calcBufLen(frm))
+	)
+	// header
+	binary.BigEndian.PutUint16(buf[ptr:2], part1)
+	ptr += 2
+	// payload ext len
+	switch frm.PayloadLen {
+	case 126:
+		binary.BigEndian.PutUint16(buf[ptr:ptr+2], uint16(frm.PayloadExtendLen))
+		ptr += 2
+	case 127:
+		binary.BigEndian.PutUint64(buf[ptr:ptr+8], frm.PayloadExtendLen)
+		ptr += 8
+	}
+
+	if frm.Mask == 1 {
+		binary.BigEndian.PutUint32(buf[ptr:ptr+4], frm.MaskingKey)
+		ptr += 4
+	}
+
+	// write payload
+	copy(buf[ptr:], frm.Payload)
 	return buf
 }
 

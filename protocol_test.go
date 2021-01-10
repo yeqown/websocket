@@ -131,7 +131,7 @@ func decodeToFrame(buf []byte) (*Frame, error) {
 		cur += 2
 	case 127:
 		// has 64bit + 32bit = 12B
-		payloadExtendLen = uint64(binary.BigEndian.Uint64(buf[cur : cur+8]))
+		payloadExtendLen = binary.BigEndian.Uint64(buf[cur : cur+8])
 		cur += 8
 	}
 	frm.PayloadExtendLen = payloadExtendLen
@@ -142,17 +142,19 @@ func decodeToFrame(buf []byte) (*Frame, error) {
 		cur += 4
 	}
 
-	var payloadlength uint64 = uint64(frm.PayloadLen)
+	var payloadLen = uint64(frm.PayloadLen)
 	if frm.PayloadExtendLen != 0 {
-		payloadlength = frm.PayloadExtendLen
+		payloadLen = frm.PayloadExtendLen
 	}
-	frm.Payload = buf[cur : cur+payloadlength]
+	frm.Payload = buf[cur : cur+payloadLen]
 
 	return frm, nil
 }
 
 func Test_EncodeFrame_Decode(t *testing.T) {
-	src := mockFrame(nil)
+	SetDebug(true)
+
+	src := mockFrame([]byte("hello"))
 	buf := encodeFrameTo(src)
 	debugPrintEncodedFrame(buf)
 
@@ -284,7 +286,26 @@ func Test_constructControlFrame(t *testing.T) {
 		args args
 		want *Frame
 	}{
-		// TODO: Add test cases.
+		{
+			name: "case 0",
+			args: args{
+				opcode:  opCodePing,
+				noMask:  true,
+				payload: []byte("payload"),
+			},
+			want: &Frame{
+				Fin:              1,
+				RSV1:             0,
+				RSV2:             0,
+				RSV3:             0,
+				OpCode:           opCodePing,
+				Mask:             0,
+				PayloadLen:       7,
+				PayloadExtendLen: 0,
+				MaskingKey:       0,
+				Payload:          []byte("payload"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -489,4 +510,42 @@ func Test_fragmentDataFrames_times(t *testing.T) {
 	assert.Equal(t, uint16(1), frames[1].Fin)
 	assert.Equal(t, opCodeContinuation, frames[1].OpCode)
 	assert.Equal(t, []byte(part2), frames[1].Payload)
+}
+
+func Benchmark_encodeFrameTo(b *testing.B) {
+	frame := constructFrame(opCodePing, true, true)
+
+	for i := 0; i < b.N; i++ {
+		//byts := encodeFrameTo(frame)
+		byts := encodeFrameTo(frame)
+		_ = byts
+	}
+}
+
+func Benchmark_Frame_SetPayload_less126(b *testing.B) {
+	payload := []byte(strings.Repeat("s", 125))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		_ = frm
+	}
+}
+
+func Benchmark_Frame_SetPayload_65535(b *testing.B) {
+	payload := []byte(strings.Repeat("s", 65535))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		_ = frm
+	}
+}
+
+func Benchmark_Frame_SetPayload_more65535(b *testing.B) {
+	payload := []byte(strings.Repeat("s", 65535*2))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		_ = frm
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func mockConn(rw io.ReadWriter) *Conn {
@@ -157,7 +158,7 @@ func Test_Conn_PingPong(t *testing.T) {
 	assert.Equal(t, pingFrm.Fin, uint16(1))
 	assert.GreaterOrEqual(t, pingFrm.PayloadLen, uint16(0))
 
-	if err := conn.replyPing(pingFrm); err != nil {
+	if err = conn.replyPing(pingFrm); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -172,8 +173,9 @@ func Test_Conn_PingPong(t *testing.T) {
 	assert.Equal(t, pongFrm.OpCode, opCodePong)
 	assert.Equal(t, pongFrm.Fin, uint16(1))
 	assert.GreaterOrEqual(t, pongFrm.PayloadLen, uint16(0))
+	pongFrm.maskPayload()
 	assert.Equal(t, pongFrm.Payload, pingFrm.Payload)
-	if err := conn.replyPong(pingFrm); err != nil {
+	if err = conn.replyPong(pingFrm); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
@@ -218,6 +220,7 @@ func Test_Conn_close(t *testing.T) {
 		assert.Equal(t, closeErr.Code, closeErr2.Code)
 		assert.Equal(t, closeErr.Error(), closeErr2.Error())
 	}
+	require.NotNil(t, frm)
 
 	assert.Equal(t, frm.OpCode, opCodeClose)
 	assert.Equal(t, frm.Fin, uint16(1))
@@ -236,5 +239,50 @@ func Test_Conn_sendDataFrame(t *testing.T) {
 	if err := conn.sendDataFrame(payload, opCodeText); err != nil {
 		t.Error(err)
 		t.FailNow()
+	}
+}
+
+func Benchmark_Conn_SendAndRead_LessThan126(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte(strings.Repeat("s", 125))
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		err = conn.sendFrame(frm)
+		assert.Nil(b, err)
+		_, err = conn.readFrame()
+		assert.Nil(b, err)
+	}
+}
+
+func Benchmark_Conn_SendAndRead_126To65535(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte(strings.Repeat("s", 65535))
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		err = conn.sendFrame(frm)
+		assert.Nil(b, err)
+		_, err = conn.readFrame()
+		assert.Nil(b, err)
+	}
+}
+
+func Benchmark_Conn_SendAndRead_BiggerThan65535(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	conn := mockConn(buf)
+	payload := []byte(strings.Repeat("s", 65535*2))
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		frm := mockFrame(payload)
+		err = conn.sendFrame(frm)
+		assert.Nil(b, err)
+		_, err = conn.readFrame()
+		assert.Nil(b, err)
 	}
 }
